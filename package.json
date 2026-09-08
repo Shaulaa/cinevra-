@@ -1,0 +1,9 @@
+{
+  "name": "cinevra",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Movie & TV Show discovery app, vanilla HTML/CSS/JS + TMDB API",
+  "scripts": {
+    "build": "node scripts/generate-config.js"
+  }
+}

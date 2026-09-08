@@ -1,0 +1,378 @@
+/* =========================================================
+   CINEVRA — detail.css
+   Style KHUSUS untuk detail.html.
+   Komponen umum (navbar, tombol, movie-card) ada di style.css.
+   ========================================================= */
+
+/* ---------- BACKDROP HEADER ---------- */
+.detail-hero {
+  position: relative;
+  min-height: 380px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.detail-hero__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.detail-hero__backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.detail-hero__backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, var(--bg) 0%, rgba(10,10,13,0.85) 45%, rgba(10,10,13,0.55) 100%);
+}
+
+.detail-hero__back {
+  position: absolute;
+  top: 20px;
+  left: 40px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(10, 10, 13, 0.55);
+  backdrop-filter: blur(6px);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: background var(--transition);
+}
+
+.detail-hero__back:hover {
+  background: rgba(10, 10, 13, 0.8);
+}
+
+/* ---------- MAIN INFO ROW (poster + judul + sidebar) ---------- */
+.detail-main {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 220px 1fr 280px;
+  gap: 32px;
+  padding: 0 0 40px;
+  margin-top: -140px;
+}
+
+.detail-poster {
+  width: 220px;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.detail-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-info {
+  padding-top: 148px;
+}
+
+.detail-info__title {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 3.4vw, 38px);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.detail-info__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.detail-info__meta .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.detail-info__rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent-gold-soft);
+  font-weight: 600;
+}
+
+.detail-info__rating svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--accent-gold);
+}
+
+.detail-info__overview {
+  max-width: 620px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin-bottom: 22px;
+}
+
+.detail-info__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.detail-info__genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.genre-tag {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* ---------- SIDEBAR (director, writer, cast utama) ---------- */
+.detail-sidebar {
+  padding-top: 148px;
+}
+
+.sidebar-card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 22px;
+}
+
+.sidebar-card__item + .sidebar-card__item {
+  margin-top: 16px;
+}
+
+.sidebar-card__label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.sidebar-card__value {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* ---------- TABS ---------- */
+.detail-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 28px;
+}
+
+.detail-tab {
+  padding: 12px 4px;
+  margin-right: 24px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.detail-tab:hover {
+  color: var(--text-primary);
+}
+
+.detail-tab.is-active {
+  color: var(--text-primary);
+  border-color: var(--accent-gold);
+}
+
+.detail-tab-panel {
+  display: none;
+}
+
+.detail-tab-panel.is-active {
+  display: block;
+}
+
+/* ---------- OVERVIEW PANEL ---------- */
+.about-block {
+  max-width: 720px;
+  margin-bottom: 36px;
+}
+
+.about-block__title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.about-block__text {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.gallery-row {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.gallery-row img {
+  width: 240px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+/* ---------- CAST PANEL ---------- */
+.cast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 18px;
+}
+
+.cast-card__photo {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface);
+  margin-bottom: 8px;
+}
+
+.cast-card__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cast-card__name {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.cast-card__role {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* ---------- REVIEWS PANEL (placeholder ringkas) ---------- */
+.reviews-empty {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* ---------- SIMILAR SECTION ---------- */
+.similar-section {
+  padding: 10px 0 60px;
+}
+
+/* ---------- TRAILER MODAL ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 5, 6, 0.85);
+  padding: 24px;
+}
+
+.modal-overlay.is-open {
+  display: flex;
+}
+
+.modal-box {
+  position: relative;
+  width: 100%;
+  max-width: 860px;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.modal-box iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.modal-close {
+  position: absolute;
+  top: -42px;
+  right: 0;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+}
+
+@media (max-width: 1000px) {
+  .detail-main {
+    grid-template-columns: 180px 1fr;
+    margin-top: -110px;
+  }
+
+  .detail-sidebar {
+    grid-column: 1 / -1;
+    padding-top: 0;
+  }
+
+  .detail-poster {
+    width: 180px;
+  }
+}
+
+@media (max-width: 640px) {
+  .detail-main {
+    grid-template-columns: 1fr;
+    margin-top: -80px;
+    text-align: center;
+  }
+
+  .detail-poster {
+    width: 150px;
+    margin: 0 auto;
+  }
+
+  .detail-info {
+    padding-top: 20px;
+  }
+
+  .detail-info__meta,
+  .detail-info__actions {
+    justify-content: center;
+  }
+
+  .detail-hero__back {
+    left: 20px;
+  }
+}

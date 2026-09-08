@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="pageTitleTag">Detail — Cinevra</title>
+
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+  <link rel="alternate icon" href="assets/images/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/detail.css">
+</head>
+<body>
+
+  <!-- ================= NAVBAR ================= -->
+  <header class="navbar">
+    <a href="index.html" class="navbar__logo"><img src="assets/images/favicon.svg" alt="" class="navbar__logo-icon"><span class="navbar__logo-text">Cine<span>vra</span></span></a>
+
+    <nav class="navbar__links" id="navLinks">
+      <a href="index.html" data-page="index.html">Home</a>
+      <a href="movies.html" data-page="movies.html">Movies</a>
+      <a href="tv-shows.html" data-page="tv-shows.html">TV Shows</a>
+      <a href="watchlist.html" data-page="watchlist.html">Lists</a>
+    </nav>
+
+    <form class="navbar__search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" placeholder="Search movies, actors, genres..." aria-label="Search">
+      <div class="navbar__search-results" id="navSearchResults"></div>
+    </form>
+
+    <a href="watchlist.html" class="navbar__watchlist-link">Watchlist</a>
+
+    <button class="navbar__toggle" type="button" aria-label="Buka menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+  </header>
+
+  <!-- konten diisi lewat detail.js setelah fetch selesai -->
+  <div id="detailContent">
+
+    <!-- ================= BACKDROP HERO ================= -->
+    <section class="detail-hero" id="detailHero">
+      <a href="javascript:history.back()" class="detail-hero__back">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        Back
+      </a>
+    </section>
+
+    <div class="container">
+      <!-- ================= MAIN INFO ================= -->
+      <div class="detail-main reveal">
+        <div class="detail-poster" id="detailPoster"></div>
+
+        <div class="detail-info">
+          <h1 class="detail-info__title" id="detailTitle">Memuat...</h1>
+          <div class="detail-info__meta" id="detailMeta"></div>
+          <p class="detail-info__overview" id="detailOverview"></p>
+          <div class="detail-info__actions">
+            <button class="btn btn--primary" id="detailTrailerBtn" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              Watch Trailer
+            </button>
+            <button class="btn btn--ghost" id="detailWatchlistBtn" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"/></svg>
+              Add to Watchlist
+            </button>
+          </div>
+          <div class="detail-info__genres" id="detailGenres"></div>
+        </div>
+
+        <aside class="detail-sidebar">
+          <div class="sidebar-card" id="detailSidebar"></div>
+        </aside>
+      </div>
+
+      <!-- ================= TABS ================= -->
+      <div class="detail-tabs">
+        <button class="detail-tab is-active" data-tab="overview" type="button">Overview</button>
+        <button class="detail-tab" data-tab="cast" type="button">Cast &amp; Crew</button>
+        <button class="detail-tab" data-tab="reviews" type="button">Reviews</button>
+        <button class="detail-tab" data-tab="similar" type="button">Similar</button>
+      </div>
+
+      <!-- Panel: Overview -->
+      <div class="detail-tab-panel is-active reveal" data-panel="overview">
+        <div class="about-block">
+          <h3 class="about-block__title">About</h3>
+          <p class="about-block__text" id="aboutText"></p>
+        </div>
+        <div>
+          <h3 class="about-block__title">Gallery</h3>
+          <div class="gallery-row" id="galleryRow"></div>
+        </div>
+      </div>
+
+      <!-- Panel: Cast & Crew -->
+      <div class="detail-tab-panel reveal" data-panel="cast">
+        <div class="cast-grid" id="castGrid"></div>
+      </div>
+
+      <!-- Panel: Reviews (fitur ringkas, TMDB reviews jarang lengkap untuk semua judul) -->
+      <div class="detail-tab-panel reveal" data-panel="reviews">
+        <p class="reviews-empty" id="reviewsText">Belum ada review untuk judul ini.</p>
+      </div>
+
+      <!-- Panel: Similar -->
+      <div class="detail-tab-panel reveal" data-panel="similar">
+        <div class="card-row" id="similarRow"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= EMPTY / ERROR STATE ================= -->
+  <div class="state-block container" id="detailErrorState" style="display:none;">
+    <svg class="state-block__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <h2 class="state-block__title">Data tidak ditemukan</h2>
+    <p class="state-block__desc">Film/TV Show ini tidak tersedia atau link yang kamu buka tidak valid.</p>
+    <a href="index.html" class="btn btn--outline">Kembali ke Home</a>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span class="site-footer__brand">Cinevra</span>
+      <span class="site-footer__note">Dibuat untuk tugas Pemrograman Web 1 &middot; Data film oleh TMDB</span>
+    </div>
+  </footer>
+
+  <!-- ================= TRAILER MODAL ================= -->
+  <div class="modal-overlay" id="trailerModal">
+    <div class="modal-box">
+      <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Tutup">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <div id="modalVideoWrap"></div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/detail.js"></script>
+</body>
+</html>

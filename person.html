@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="pageTitleTag">Person — Cinevra</title>
+
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+  <link rel="alternate icon" href="assets/images/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/person.css">
+</head>
+<body>
+
+  <!-- ================= NAVBAR ================= -->
+  <header class="navbar">
+    <a href="index.html" class="navbar__logo"><img src="assets/images/favicon.svg" alt="" class="navbar__logo-icon"><span class="navbar__logo-text">Cine<span>vra</span></span></a>
+
+    <nav class="navbar__links" id="navLinks">
+      <a href="index.html" data-page="index.html">Home</a>
+      <a href="movies.html" data-page="movies.html">Movies</a>
+      <a href="tv-shows.html" data-page="tv-shows.html">TV Shows</a>
+      <a href="watchlist.html" data-page="watchlist.html">Lists</a>
+    </nav>
+
+    <form class="navbar__search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" placeholder="Search movies, actors, genres..." aria-label="Search">
+      <div class="navbar__search-results" id="navSearchResults"></div>
+    </form>
+
+    <a href="watchlist.html" class="navbar__watchlist-link">Watchlist</a>
+
+    <button class="navbar__toggle" type="button" aria-label="Buka menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+  </header>
+
+  <div id="personContent">
+    <div class="container">
+
+      <!-- ================= MAIN INFO ================= -->
+      <div class="person-main reveal">
+        <div class="person-photo" id="personPhoto"></div>
+
+        <div class="person-info">
+          <h1 class="person-info__name" id="personName">Memuat...</h1>
+
+          <div class="person-info__meta" id="personMeta"></div>
+
+          <h3 class="person-info__bio-title">Biography</h3>
+          <p class="person-info__bio is-clamped" id="personBio"></p>
+          <button class="person-bio-toggle" id="bioToggleBtn" type="button" style="display:none;">Read more</button>
+        </div>
+      </div>
+
+      <!-- ================= FILMOGRAPHY ================= -->
+      <section class="filmography-section">
+        <h2 class="section__title">Known For</h2>
+
+        <div class="filmography-tabs">
+          <button class="filmography-tab is-active" data-filter="all" type="button">All</button>
+          <button class="filmography-tab" data-filter="movie" type="button">Movies</button>
+          <button class="filmography-tab" data-filter="tv" type="button">TV Shows</button>
+        </div>
+
+        <div class="card-grid" id="filmographyGrid"></div>
+
+        <div class="state-block" id="filmographyEmpty" style="display:none;">
+          <p class="state-block__desc">Belum ada data filmography untuk kategori ini.</p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ================= EMPTY / ERROR STATE ================= -->
+  <div class="state-block container" id="personErrorState" style="display:none;">
+    <svg class="state-block__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <h2 class="state-block__title">Data tidak ditemukan</h2>
+    <p class="state-block__desc">Profil ini tidak tersedia atau link yang kamu buka tidak valid.</p>
+    <a href="index.html" class="btn btn--outline">Kembali ke Home</a>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span class="site-footer__brand">Cinevra</span>
+      <span class="site-footer__note">Dibuat untuk tugas Pemrograman Web 1 &middot; Data film oleh TMDB</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/person.js"></script>
+</body>
+</html>

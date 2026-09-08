@@ -1,0 +1,10 @@
+# API key asli JANGAN pernah ke-commit. Copy js/config.example.js jadi
+# js/config.js dan isi key kamu di situ (lihat README.md).
+js/config.js
+
+# file/folder umum yang gak perlu ikut di-commit
+.DS_Store
+Thumbs.db
+node_modules/
+.netlify/
+.vercel/

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Watchlist — Cinevra</title>
+
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+  <link rel="alternate icon" href="assets/images/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/watchlist.css">
+</head>
+<body>
+
+  <!-- ================= NAVBAR ================= -->
+  <header class="navbar">
+    <a href="index.html" class="navbar__logo"><img src="assets/images/favicon.svg" alt="" class="navbar__logo-icon"><span class="navbar__logo-text">Cine<span>vra</span></span></a>
+
+    <nav class="navbar__links" id="navLinks">
+      <a href="index.html" data-page="index.html">Home</a>
+      <a href="movies.html" data-page="movies.html">Movies</a>
+      <a href="tv-shows.html" data-page="tv-shows.html">TV Shows</a>
+      <a href="watchlist.html" data-page="watchlist.html">Lists</a>
+    </nav>
+
+    <form class="navbar__search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" placeholder="Search movies, actors, genres..." aria-label="Search">
+      <div class="navbar__search-results" id="navSearchResults"></div>
+    </form>
+
+    <a href="watchlist.html" class="navbar__watchlist-link">Watchlist</a>
+
+    <button class="navbar__toggle" type="button" aria-label="Buka menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+  </header>
+
+  <main class="container">
+
+    <div class="watchlist-head">
+      <h1 class="watchlist-head__title">My Watchlist</h1>
+      <p class="watchlist-head__subtitle" id="watchlistSubtitle">Film dan TV Show yang kamu simpan</p>
+    </div>
+
+    <!-- ================= TABS ================= -->
+    <div class="watchlist-tabs">
+      <button class="watchlist-tab is-active" data-filter="all" type="button">
+        All <span class="watchlist-tab__count" id="countAll"></span>
+      </button>
+      <button class="watchlist-tab" data-filter="movie" type="button">
+        Movies <span class="watchlist-tab__count" id="countMovies"></span>
+      </button>
+      <button class="watchlist-tab" data-filter="tv" type="button">
+        TV Shows <span class="watchlist-tab__count" id="countTV"></span>
+      </button>
+    </div>
+
+    <!-- ================= GRID ================= -->
+    <section class="watchlist-grid-section">
+      <div class="card-grid" id="watchlistGrid"></div>
+
+      <!-- ================= EMPTY STATE ================= -->
+      <div class="state-block watchlist-empty" id="emptyState" style="display:none;">
+        <svg class="state-block__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"/>
+        </svg>
+        <h2 class="state-block__title" id="emptyTitle">Watchlist kamu masih kosong</h2>
+        <p class="state-block__desc" id="emptyDesc">Mulai jelajahi film dan TV show, lalu tekan ikon bookmark buat menyimpannya di sini.</p>
+        <a href="movies.html" class="btn btn--primary">Browse Movies</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span class="site-footer__brand">Cinevra</span>
+      <span class="site-footer__note">Dibuat untuk tugas Pemrograman Web 1 &middot; Data film oleh TMDB</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/watchlist.js"></script>
+</body>
+</html>

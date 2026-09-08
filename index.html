@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cinevra — Temukan Film & TV Show Favoritmu</title>
+
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+  <link rel="alternate icon" href="assets/images/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/home.css">
+</head>
+<body>
+
+  <!-- ================= NAVBAR ================= -->
+  <header class="navbar">
+    <a href="index.html" class="navbar__logo"><img src="assets/images/favicon.svg" alt="" class="navbar__logo-icon"><span class="navbar__logo-text">Cine<span>vra</span></span></a>
+
+    <nav class="navbar__links" id="navLinks">
+      <a href="index.html" data-page="index.html">Home</a>
+      <a href="movies.html" data-page="movies.html">Movies</a>
+      <a href="tv-shows.html" data-page="tv-shows.html">TV Shows</a>
+      <a href="watchlist.html" data-page="watchlist.html">Lists</a>
+    </nav>
+
+    <form class="navbar__search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" placeholder="Search movies, actors, genres..." aria-label="Search">
+      <div class="navbar__search-results" id="navSearchResults"></div>
+    </form>
+
+    <a href="watchlist.html" class="navbar__watchlist-link">Watchlist</a>
+
+    <button class="navbar__toggle" type="button" aria-label="Buka menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+  </header>
+
+  <!-- ================= HERO ================= -->
+  <section class="hero hero--loading" id="hero">
+    <!-- backdrop, judul, dan tombol diisi otomatis lewat home.js -->
+    <div class="hero__content">
+      <span class="hero__eyebrow">Trending Now</span>
+      <h1 class="hero__title" id="heroTitle">Memuat film trending...</h1>
+      <div class="hero__meta" id="heroMeta"></div>
+      <p class="hero__overview" id="heroOverview">Sedang mengambil data dari TMDB...</p>
+      <div class="hero__actions">
+        <button class="btn btn--primary" id="heroTrailerBtn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          Watch Trailer
+        </button>
+        <button class="btn btn--ghost" id="heroWatchlistBtn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"/></svg>
+          Add to Watchlist
+        </button>
+      </div>
+    </div>
+
+    <button class="hero__nav hero__nav--prev" id="heroPrev" type="button" aria-label="Film sebelumnya">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    <button class="hero__nav hero__nav--next" id="heroNext" type="button" aria-label="Film berikutnya">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+    <div class="hero__dots" id="heroDots"></div>
+  </section>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="container home-sections">
+
+    <!-- Continue Your Watchlist (hanya muncul kalau localStorage ada isinya) -->
+    <section class="section reveal" id="continueSection" style="display:none;">
+      <div class="section__head">
+        <h2 class="section__title">Continue Your Watchlist</h2>
+        <a href="watchlist.html" class="section__link">
+          See all
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+      </div>
+      <div class="card-row" id="continueRow"></div>
+    </section>
+
+    <!-- Recently Viewed (hanya muncul kalau localStorage ada isinya) -->
+    <section class="section reveal" id="recentSection" style="display:none;">
+      <div class="section__head">
+        <h2 class="section__title">Recently Viewed</h2>
+      </div>
+      <div class="card-row" id="recentRow"></div>
+    </section>
+
+    <!-- Trending Movies -->
+    <section class="section reveal">
+      <div class="section__head">
+        <h2 class="section__title">Trending Movies</h2>
+        <a href="movies.html" class="section__link">
+          See all
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+      </div>
+      <div class="card-row" id="trendingRow"></div>
+    </section>
+
+    <!-- Trending TV Shows -->
+    <section class="section reveal">
+      <div class="section__head">
+        <h2 class="section__title">Trending TV Shows</h2>
+        <a href="tv-shows.html" class="section__link">
+          See all
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+      </div>
+      <div class="card-row" id="trendingTVRow"></div>
+    </section>
+
+    <!-- Popular Movies -->
+    <section class="section reveal">
+      <div class="section__head">
+        <h2 class="section__title">Popular Movies</h2>
+        <a href="movies.html" class="section__link">
+          See all
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+      </div>
+      <div class="card-row" id="popularRow"></div>
+    </section>
+
+    <!-- Top Rated Movies -->
+    <section class="section reveal">
+      <div class="section__head">
+        <h2 class="section__title">Top Rated Movies</h2>
+        <a href="movies.html" class="section__link">
+          See all
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+      </div>
+      <div class="card-row" id="topRatedRow"></div>
+    </section>
+
+    <!-- Now Playing in Theaters -->
+    <section class="section reveal">
+      <div class="section__head">
+        <h2 class="section__title">Now Playing in Theaters</h2>
+        <a href="movies.html" class="section__link">
+          See all
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+      </div>
+      <div class="card-row" id="nowPlayingRow"></div>
+    </section>
+
+    <!-- Browse by Genre -->
+    <section class="section reveal">
+      <div class="section__head">
+        <h2 class="section__title">Browse by Genre</h2>
+      </div>
+      <div class="genre-chip-row" id="genreChipRow"></div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span class="site-footer__brand">Cinevra</span>
+      <span class="site-footer__note">Dibuat untuk tugas Pemrograman Web 1 &middot; Data film oleh TMDB</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>
