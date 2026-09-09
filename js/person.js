@@ -48,6 +48,7 @@ function renderPerson(person) {
     const img = document.createElement('img');
     img.src = photoUrl;
     img.alt = person.name; // aman: properti .alt, bukan innerHTML
+    attachImageFallback(img);
     photoWrap.appendChild(img);
   }
 

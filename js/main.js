@@ -282,6 +282,7 @@ function buildSearchResultRow(item) {
       const img = document.createElement('img');
       img.src = photo;
       img.alt = item.name;
+      attachImageFallback(img);
       thumb.appendChild(img);
     }
 
@@ -298,6 +299,7 @@ function buildSearchResultRow(item) {
       const img = document.createElement('img');
       img.src = poster;
       img.alt = title;
+      attachImageFallback(img);
       thumb.appendChild(img);
     }
 
@@ -471,6 +473,46 @@ function debounce(fn, delay = 400) {
    supaya tidak menulis ulang HTML card di setiap file.
    ========================================================= */
 
+/* =========================================================
+   FALLBACK GAMBAR RUSAK
+   Kalau URL poster/backdrop dari TMDB gagal dimuat (link mati,
+   koneksi putus, dll), tampilan bakal ganti ke ikon placeholder
+   ini daripada nunjukkin ikon broken-image bawaan browser.
+   ========================================================= */
+
+const IMAGE_FALLBACK_SRC = buildImageFallbackSrc();
+
+function buildImageFallbackSrc() {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450">
+      <rect width="300" height="450" fill="#18181d"/>
+      <g fill="none" stroke="#3a3a42" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="70" y="150" width="160" height="120" rx="10"/>
+        <circle cx="150" cy="210" r="20"/>
+        <path d="M70 240 L118 195 L158 225 L198 185 L230 212"/>
+      </g>
+    </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+/**
+ * Pasang fallback ke sebuah elemen <img>: kalau gambar aslinya gagal
+ * dimuat, otomatis diganti ke placeholder lokal (bukan fetch ke server
+ * lagi), jadi gak ada broken-image icon yang keliatan ke user.
+ * @param {HTMLImageElement} img
+ */
+function attachImageFallback(img) {
+  img.addEventListener(
+    'error',
+    () => {
+      img.onerror = null; // cegah infinite loop kalau placeholder-nya sendiri somehow gagal
+      img.src = IMAGE_FALLBACK_SRC;
+      img.classList.add('img-fallback');
+    },
+    { once: true }
+  );
+}
+
 /**
  * Membuat satu elemen kartu film/TV show.
  * Semua teks yang berasal dari luar (judul, dsb) di-set lewat
@@ -493,6 +535,7 @@ function createMovieCard(item) {
     img.src = poster;
     img.alt = `Poster ${item.title}`; // aman: .alt adalah properti, bukan HTML yang di-parse
     img.loading = 'lazy';
+    attachImageFallback(img);
     posterWrap.appendChild(img);
   } else {
     const noPoster = document.createElement('div');

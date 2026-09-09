@@ -14,9 +14,9 @@
 // api.js sendiri TIDAK pernah menyimpan key secara langsung.
 const TMDB_API_KEY = (window.CINEVRA_CONFIG && window.CINEVRA_CONFIG.TMDB_API_KEY) || '';
 
-if (!TMDB_API_KEY || TMDB_API_KEY === "") {
+if (!TMDB_API_KEY || TMDB_API_KEY === 'MASUKKAN_TMDB_API_KEY_DI_SINI') {
   console.warn(
-    "TMDB_API_KEY belum di-set. Copy js/config.example.js jadi js/config.js lalu isi API key kamu (lihat README.md).",
+    'TMDB_API_KEY belum di-set. Copy js/config.example.js jadi js/config.js lalu isi API key kamu (lihat README.md).'
   );
 }
 
@@ -34,6 +34,11 @@ const IMAGE_SIZES = {
 
 /**
  * Helper utama untuk memanggil TMDB API.
+ * Hasilnya di-cache ke sessionStorage berdasarkan endpoint+parameter,
+ * jadi kalau user pindah halaman lalu balik lagi (misal Detail -> Back
+ * -> Movies) dalam tab yang sama, data yang sama gak perlu di-fetch
+ * ulang dari TMDB, cukup dibaca dari cache dan langsung tampil.
+ * Cache otomatis hilang begitu tab/browser ditutup (sifat sessionStorage).
  * @param {string} endpoint - contoh: '/movie/popular'
  * @param {Object} params - query string tambahan, contoh: { page: 2 }
  * @param {AbortSignal} [signal] - opsional, buat cancel request yang keburu usang
@@ -53,6 +58,13 @@ async function tmdbFetch(endpoint, params = {}, signal) {
     }
   });
 
+  // key cache gak perlu ikutan api_key, biar gak beda-beda kalau key-nya
+  // sempat diganti; cukup endpoint + query lain aja
+  const cacheKey = `cinevra_cache:${endpoint}?${url.searchParams.toString().replace(`api_key=${TMDB_API_KEY}&`, '')}`;
+
+  const cached = readCache(cacheKey);
+  if (cached) return cached;
+
   const response = await fetch(url.toString(), { signal });
 
   if (!response.ok) {
@@ -60,7 +72,37 @@ async function tmdbFetch(endpoint, params = {}, signal) {
     throw new Error(`TMDB request gagal (status ${response.status})`);
   }
 
-  return response.json();
+  const data = await response.json();
+  writeCache(cacheKey, data);
+  return data;
+}
+
+/**
+ * Baca cache dari sessionStorage. Return null kalau gak ada atau
+ * sessionStorage gak bisa diakses (mode private/incognito ketat, dsb),
+ * supaya tetap fallback ke fetch normal tanpa error.
+ */
+function readCache(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Simpan hasil fetch ke sessionStorage. Dibungkus try/catch karena
+ * sessionStorage punya kuota terbatas (biasanya ~5MB) dan bisa penuh
+ * kalau user buka banyak banget halaman dalam satu sesi, kalau itu
+ * terjadi caching-nya di-skip aja, gak sampai bikin app error.
+ */
+function writeCache(key, data) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    // storage penuh atau gak tersedia, gak masalah, lanjut tanpa cache
+  }
 }
 
 /**

@@ -99,6 +99,7 @@ function renderWatchlistCard(item) {
     img.src = poster;
     img.alt = `Poster ${item.title}`; // aman: properti .alt, bukan innerHTML
     img.loading = 'lazy';
+    attachImageFallback(img);
     posterWrap.appendChild(img);
   } else {
     const noPoster = document.createElement('div');

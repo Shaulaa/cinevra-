@@ -60,6 +60,7 @@ async function loadListHeroBackdrop() {
     const img = document.createElement('img');
     img.src = getImageUrl(movie.backdrop_path, 'backdrop');
     img.alt = '';
+    attachImageFallback(img);
     backdrop.appendChild(img);
     hero.prepend(backdrop);
   } catch (error) {

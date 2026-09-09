@@ -100,6 +100,7 @@ function renderDetail(item) {
     const bgImg = document.createElement('img');
     bgImg.src = backdropUrl;
     bgImg.alt = `Backdrop ${item.title}`; // aman: properti .alt, bukan innerHTML
+    attachImageFallback(bgImg);
     bgWrap.appendChild(bgImg);
     heroSection.prepend(bgWrap);
   }
@@ -112,6 +113,7 @@ function renderDetail(item) {
     const posterImg = document.createElement('img');
     posterImg.src = posterUrl;
     posterImg.alt = `Poster ${item.title}`;
+    attachImageFallback(posterImg);
     posterWrap.appendChild(posterImg);
   }
 
@@ -251,6 +253,7 @@ function renderCast(credits) {
       img.src = photo;
       img.alt = person.name; // aman: properti .alt, bukan innerHTML
       img.loading = 'lazy';
+      attachImageFallback(img);
       photoWrap.appendChild(img);
     }
 
@@ -291,6 +294,7 @@ function renderGallery(data) {
     img.src = getImageUrl(path, 'backdropSmall');
     img.alt = 'Gallery image';
     img.loading = 'lazy';
+    attachImageFallback(img);
     row.appendChild(img);
   });
 }
@@ -362,6 +366,13 @@ function bindModal() {
   document.getElementById('modalCloseBtn').addEventListener('click', closeTrailerModal);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) closeTrailerModal();
+  });
+
+  // tutup modal dengan tombol Esc, tapi cuma kalau modalnya lagi kebuka
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('is-open')) {
+      closeTrailerModal();
+    }
   });
 }
 

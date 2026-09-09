@@ -521,6 +521,17 @@ input:focus-visible {
   flex-shrink: 0;
 }
 
+/* bungkus tombol search-mobile + hamburger jadi satu grup, biar
+   justify-content:space-between di .navbar cuma misahin grup ini
+   dari logo, bukan misahin tombol search sama hamburger satu-satu
+   (itu penyebab dulu kejauhan) */
+.navbar__mobile-actions {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
 /* backdrop gelap di belakang menu/search mobile pas lagi kebuka */
 .navbar__backdrop {
   display: none;
@@ -794,6 +805,15 @@ input:focus-visible {
   transform: scale(1.05);
 }
 
+/* gambar fallback (dari attachImageFallback di main.js) dibikin contain
+   biar ikonnya gak ke-crop, bukan cover kayak poster asli */
+img.img-fallback {
+  object-fit: contain !important;
+  padding: 18%;
+  background: var(--surface);
+  transform: none !important;
+}
+
 .movie-card__no-poster {
   width: 100%;
   height: 100%;
@@ -997,6 +1017,6 @@ input:focus-visible {
 
 @media (max-width: 640px) {
   .container {
-    padding: 0 20px;
+    padding: 0 24px;
   }
 }

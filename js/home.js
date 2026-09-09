@@ -75,6 +75,7 @@ function renderHero(index) {
     const img = document.createElement('img');
     img.src = backdropUrl;
     img.alt = `Backdrop ${movie.title}`; // aman: properti .alt, bukan innerHTML
+    attachImageFallback(img);
     backdropWrap.appendChild(img);
   }
 

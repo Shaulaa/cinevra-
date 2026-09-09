@@ -258,6 +258,10 @@
   gap: 18px;
 }
 
+.cast-card {
+  display: block;
+}
+
 .cast-card__photo {
   width: 100%;
   aspect-ratio: 2 / 3;
@@ -265,6 +269,11 @@
   overflow: hidden;
   background: var(--surface);
   margin-bottom: 8px;
+  transition: transform var(--transition);
+}
+
+.cast-card:hover .cast-card__photo {
+  transform: translateY(-3px);
 }
 
 .cast-card__photo img {
@@ -355,7 +364,11 @@
   .detail-main {
     grid-template-columns: 1fr;
     margin-top: -80px;
-    text-align: center;
+    /* CATATAN: sengaja TIDAK pakai text-align:center di sini.
+       Paragraf sinopsis butuh rata kiri biar tiap baris rapi
+       (center-align di teks panjang bikin baris kepotong gak rata,
+       keliatan "miring"). Cuma elemen tertentu (poster, badge,
+       genre tag, tombol) yang di-center manual lewat margin/justify-content. */
   }
 
   .detail-poster {
@@ -367,8 +380,15 @@
     padding-top: 20px;
   }
 
+  .detail-info__title,
+  .detail-info__overview,
+  .about-block__text {
+    text-align: left;
+  }
+
   .detail-info__meta,
-  .detail-info__actions {
+  .detail-info__actions,
+  .detail-info__genres {
     justify-content: center;
   }
 
