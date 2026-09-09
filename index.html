@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Cinevra — Temukan Film & TV Show Favoritmu</title>
 
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
@@ -19,10 +19,22 @@
     <a href="index.html" class="navbar__logo"><img src="assets/images/favicon.svg" alt="" class="navbar__logo-icon"><span class="navbar__logo-text">Cine<span>vra</span></span></a>
 
     <nav class="navbar__links" id="navLinks">
-      <a href="index.html" data-page="index.html">Home</a>
-      <a href="movies.html" data-page="movies.html">Movies</a>
-      <a href="tv-shows.html" data-page="tv-shows.html">TV Shows</a>
-      <a href="watchlist.html" data-page="watchlist.html">Lists</a>
+      <a href="index.html" data-page="index.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5 12 3l9 6.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"></path></svg>
+        <span>Home</span>
+      </a>
+      <a href="movies.html" data-page="movies.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M7 3v18M17 3v18M3 8h4M17 8h4M3 16h4M17 16h4"></path></svg>
+        <span>Movies</span>
+      </a>
+      <a href="tv-shows.html" data-page="tv-shows.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M8 21h8M12 18v3"></path></svg>
+        <span>TV Shows</span>
+      </a>
+      <a href="watchlist.html" data-page="watchlist.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"></path></svg>
+        <span>Lists</span>
+      </a>
     </nav>
 
     <form class="navbar__search">
@@ -31,19 +43,29 @@
         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
       </svg>
       <input type="text" placeholder="Search movies, actors, genres..." aria-label="Search">
+      <button type="button" class="navbar__search-close" id="searchCloseBtn" aria-label="Tutup pencarian">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
       <div class="navbar__search-results" id="navSearchResults"></div>
     </form>
 
     <a href="watchlist.html" class="navbar__watchlist-link">Watchlist</a>
 
-    <button class="navbar__toggle" type="button" aria-label="Buka menu">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <line x1="3" y1="12" x2="21" y2="12"></line>
-        <line x1="3" y1="18" x2="21" y2="18"></line>
+    <button class="navbar__mobile-search-btn" id="mobileSearchBtn" type="button" aria-label="Cari">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
       </svg>
     </button>
+
+    <button class="navbar__toggle" id="navToggle" type="button" aria-label="Buka menu" aria-expanded="false">
+      <span class="navbar__toggle-bar"></span>
+      <span class="navbar__toggle-bar"></span>
+      <span class="navbar__toggle-bar"></span>
+    </button>
   </header>
+
+  <div class="navbar__backdrop" id="navBackdrop"></div>
 
   <!-- ================= HERO ================= -->
   <section class="hero hero--loading" id="hero">

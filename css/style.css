@@ -66,6 +66,13 @@
 
 html {
   scroll-behavior: smooth;
+  /* matiin flash biru bawaan browser mobile pas nge-tap elemen apapun */
+  -webkit-tap-highlight-color: transparent;
+  /* jaga-jaga: cegah seluruh halaman bisa digeser ke samping kalau ada
+     elemen yang kelebaran dari viewport, cuma .card-row yang boleh
+     scroll horizontal (di dalam dirinya sendiri) */
+  overflow-x: hidden;
+  width: 100%;
 }
 
 body {
@@ -74,6 +81,8 @@ body {
   font-family: var(--font-body);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 img {
@@ -263,12 +272,20 @@ input:focus-visible {
 }
 
 .navbar__links a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 8px 14px;
   border-radius: var(--radius-sm);
   font-size: 14.5px;
   font-weight: 500;
   color: var(--text-secondary);
   transition: color var(--transition), background var(--transition);
+}
+
+.navbar__links-icon {
+  display: none; /* cuma kepake di menu mobile, lihat media query di bawah */
+  flex-shrink: 0;
 }
 
 .navbar__links a:hover {
@@ -320,6 +337,15 @@ input:focus-visible {
 .navbar__search svg {
   flex-shrink: 0;
   color: var(--text-muted);
+}
+
+.navbar__search-close {
+  display: none; /* cuma muncul pas search mode mobile aktif */
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 2px;
 }
 
 /* ---------- SEARCH AUTOCOMPLETE DROPDOWN ---------- */
@@ -445,37 +471,122 @@ input:focus-visible {
 /* toggle menu mobile (hamburger), disembunyikan di desktop */
 .navbar__toggle {
   display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
   background: none;
   border: none;
+  border-radius: var(--radius-sm);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.navbar__toggle-bar {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--text-primary);
+  transition: transform 250ms ease, opacity 200ms ease;
+}
+
+/* morph jadi ikon X pas menu lagi kebuka */
+.navbar__toggle.is-open .navbar__toggle-bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.navbar__toggle.is-open .navbar__toggle-bar:nth-child(2) {
+  opacity: 0;
+}
+
+.navbar__toggle.is-open .navbar__toggle-bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* tombol search khusus mobile (di desktop kotak search selalu tampil,
+   jadi tombol ini gak perlu muncul) */
+.navbar__mobile-search-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
-  padding: 6px;
+  flex-shrink: 0;
+}
+
+/* backdrop gelap di belakang menu/search mobile pas lagi kebuka */
+.navbar__backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 5, 6, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 95;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.navbar__backdrop.is-open {
+  display: block;
+  opacity: 1;
 }
 
 @media (max-width: 900px) {
   .navbar {
-    padding: 16px 20px;
+    padding: 14px 20px;
+    gap: 12px;
   }
 
   .navbar__search {
     display: none;
   }
 
+  /* search mode mobile: kotak search jadi bar melayang penuh di bawah navbar */
+  .navbar__search.is-mobile-open {
+    display: flex;
+    position: fixed;
+    top: 68px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    z-index: 106;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .navbar__search.is-mobile-open .navbar__search-close {
+    display: flex;
+  }
+
+  .navbar__mobile-search-btn {
+    display: flex;
+  }
+
   .navbar__toggle {
-    display: block;
+    display: flex;
   }
 
   .navbar__links {
     position: fixed;
-    top: 65px;
-    left: 0;
-    right: 0;
+    top: 68px;
+    left: 16px;
+    right: 16px;
+    z-index: 105;
     flex-direction: column;
     align-items: stretch;
     gap: 4px;
     background: var(--bg-elevated);
-    border-bottom: 1px solid var(--border-soft);
-    padding: 12px 20px 20px;
-    transform: translateY(-8px);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    transform: translateY(-12px);
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--transition), transform var(--transition);
@@ -488,7 +599,23 @@ input:focus-visible {
   }
 
   .navbar__links a {
-    padding: 12px 14px;
+    padding: 13px 14px;
+    font-size: 15px;
+  }
+
+  .navbar__links-icon {
+    display: block;
+    color: var(--text-muted);
+  }
+
+  .navbar__links a.is-active {
+    background: var(--surface);
+    border-left: 3px solid var(--accent-gold);
+    padding-left: 11px;
+  }
+
+  .navbar__links a.is-active .navbar__links-icon {
+    color: var(--accent-gold);
   }
 
   .navbar__watchlist-link {
@@ -870,6 +997,6 @@ input:focus-visible {
 
 @media (max-width: 640px) {
   .container {
-    padding: 0 18px;
+    padding: 0 20px;
   }
 }

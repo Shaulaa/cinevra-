@@ -23,18 +23,100 @@ const RECENTLY_VIEWED_MAX = 15;
  * Membuka/menutup menu navbar versi mobile (hamburger).
  */
 function initNavbarToggle() {
-  const toggleBtn = document.querySelector('.navbar__toggle');
+  const toggleBtn = document.getElementById('navToggle');
   const links = document.querySelector('.navbar__links');
+  const backdrop = document.getElementById('navBackdrop');
   if (!toggleBtn || !links) return;
 
   toggleBtn.addEventListener('click', () => {
-    links.classList.toggle('is-open');
+    const opening = !links.classList.contains('is-open');
+    closeMobileSearch(); // biar cuma satu panel yang kebuka dalam satu waktu
+    links.classList.toggle('is-open', opening);
+    toggleBtn.classList.toggle('is-open', opening);
+    toggleBtn.setAttribute('aria-expanded', String(opening));
+    updateNavBackdrop();
   });
 
   // tutup menu saat salah satu link diklik (khusus tampilan mobile)
   links.querySelectorAll('a').forEach((link) => {
-    link.addEventListener('click', () => links.classList.remove('is-open'));
+    link.addEventListener('click', () => closeMobileMenu());
   });
+
+  if (backdrop) {
+    backdrop.addEventListener('click', () => {
+      closeMobileMenu();
+      closeMobileSearch();
+    });
+  }
+}
+
+function closeMobileMenu() {
+  const toggleBtn = document.getElementById('navToggle');
+  const links = document.querySelector('.navbar__links');
+  if (!toggleBtn || !links) return;
+  links.classList.remove('is-open');
+  toggleBtn.classList.remove('is-open');
+  toggleBtn.setAttribute('aria-expanded', 'false');
+  updateNavBackdrop();
+}
+
+function closeMobileSearch() {
+  const form = document.querySelector('.navbar__search');
+  if (!form) return;
+  form.classList.remove('is-mobile-open');
+  updateNavBackdrop();
+}
+
+/**
+ * Backdrop gelap cuma nyala kalau salah satu dari menu hamburger
+ * atau search mobile lagi kebuka.
+ */
+function updateNavBackdrop() {
+  const backdrop = document.getElementById('navBackdrop');
+  if (!backdrop) return;
+  const links = document.querySelector('.navbar__links');
+  const search = document.querySelector('.navbar__search');
+  const anyOpen =
+    (links && links.classList.contains('is-open')) ||
+    (search && search.classList.contains('is-mobile-open'));
+  backdrop.classList.toggle('is-open', Boolean(anyOpen));
+}
+
+/**
+ * Tombol search khusus tampilan mobile: buka/tutup search bar
+ * yang melayang di bawah navbar (di desktop, search box selalu tampil
+ * jadi tombol ini disembunyikan lewat CSS).
+ */
+function initMobileSearchToggle() {
+  const btn = document.getElementById('mobileSearchBtn');
+  const form = document.querySelector('.navbar__search');
+  const closeBtn = document.getElementById('searchCloseBtn');
+  if (!btn || !form) return;
+
+  const input = form.querySelector('input');
+  const resultsBox = form.querySelector('.navbar__search-results');
+
+  btn.addEventListener('click', () => {
+    const opening = !form.classList.contains('is-mobile-open');
+    closeMobileMenu(); // biar cuma satu panel yang kebuka dalam satu waktu
+    form.classList.toggle('is-mobile-open', opening);
+    updateNavBackdrop();
+
+    if (opening && input) {
+      setTimeout(() => input.focus(), 60); // nunggu transisi buka kelar dulu
+    }
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      closeMobileSearch();
+      if (input) input.value = '';
+      if (resultsBox) {
+        resultsBox.classList.remove('is-open');
+        resultsBox.innerHTML = '';
+      }
+    });
+  }
 }
 
 /**
@@ -116,10 +198,11 @@ function initNavbarSearch() {
     }
   });
 
-  // tutup dropdown dengan tombol Escape
+  // tutup dropdown dengan tombol Escape (dan search bar mobile kalau lagi kebuka)
   input.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       resultsBox.classList.remove('is-open');
+      closeMobileSearch();
       input.blur();
     }
   });
@@ -716,6 +799,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initNavbarToggle();
   highlightActiveNavLink();
   initNavbarSearch();
+  initMobileSearchToggle();
   initScrollReveal();
   initScrollTopButton();
 });
