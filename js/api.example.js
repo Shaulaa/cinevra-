@@ -1,5 +1,5 @@
 /* =========================================================
-   CINEVRA — js/api.example.js
+  CINEVRA - js/api.example.js
    Template konfigurasi API. JANGAN commit api.js yang berisi
    API key asli ke repository publik.
 
@@ -118,6 +118,10 @@ function fetchSimilarMovies(id) {
   return tmdbFetch(`/movie/${id}/similar`);
 }
 
+function fetchMovieReviews(id, page = 1) {
+  return tmdbFetch(`/movie/${id}/reviews`, { page });
+}
+
 function fetchMovieGenres() {
   return tmdbFetch('/genre/movie/list');
 }
@@ -160,6 +164,10 @@ function fetchTVVideos(id) {
 
 function fetchSimilarTV(id) {
   return tmdbFetch(`/tv/${id}/similar`);
+}
+
+function fetchTVReviews(id, page = 1) {
+  return tmdbFetch(`/tv/${id}/reviews`, { page });
 }
 
 function fetchTVGenres() {

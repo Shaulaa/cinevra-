@@ -1,5 +1,5 @@
 /* =========================================================
-   CINEVRA — js/home.js
+  CINEVRA - js/home.js
    Logic khusus untuk index.html:
    1. Hero carousel dari film trending (5 film teratas)
    2. Section "Trending Movies"
@@ -29,6 +29,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('heroPrev').addEventListener('click', () => moveHero(-1));
   document.getElementById('heroNext').addEventListener('click', () => moveHero(1));
+
+  // render ulang row "Continue Your Watchlist" tiap kali ada perubahan
+  // watchlist di halaman ini (klik wishlist di hero atau di row manapun)
+  window.addEventListener('watchlist:change', () => {
+    loadContinueWatchlistRow();
+  });
 });
 
 /* =========================================================
@@ -110,6 +116,7 @@ function renderHero(index) {
   watchlistBtn.onclick = () => {
     toggleWatchlist(watchlistItem);
     updateHeroWatchlistBtn(watchlistBtn, watchlistItem);
+    playWatchBtnPop(watchlistBtn);
   };
 
   updateHeroDots();
@@ -322,11 +329,19 @@ async function loadNowPlayingRow() {
 
 function loadContinueWatchlistRow() {
   const list = getWatchlist();
-  if (list.length === 0) return; // biarkan section tetap disembunyikan
-
   const section = document.getElementById('continueSection');
   const row = document.getElementById('continueRow');
+
+  if (list.length === 0) {
+    // watchlist kosong (atau baru aja jadi kosong lagi setelah di-unwish
+    // semua) -> sembunyikan section, bukan cuma dibiarkan gak keisi
+    section.style.display = 'none';
+    row.innerHTML = '';
+    return;
+  }
+
   section.style.display = 'block';
+  row.innerHTML = ''; // kosongkan dulu supaya gak dobel pas dirender ulang
 
   // cukup tampilkan 10 item terbaru yang ditambahkan
   list.slice(0, 10).forEach((item) => {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title id="pageTitleTag">Detail — Cinevra</title>
+  <title id="pageTitleTag">Detail - Cinevra</title>
 
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
   <link rel="alternate icon" href="assets/images/favicon.ico">
@@ -132,9 +132,13 @@
         <div class="cast-grid" id="castGrid"></div>
       </div>
 
-      <!-- Panel: Reviews (fitur ringkas, TMDB reviews jarang lengkap untuk semua judul) -->
+      <!-- Panel: Reviews (data asli dari TMDB, kalau tersedia untuk judul ini) -->
       <div class="detail-tab-panel reveal" data-panel="reviews">
-        <p class="reviews-empty" id="reviewsText">Belum ada review untuk judul ini.</p>
+        <div class="review-list" id="reviewsList"></div>
+        <p class="reviews-empty" id="reviewsEmpty" style="display:none;">Belum ada review untuk judul ini.</p>
+        <div class="load-more-wrap" id="reviewsLoadMoreWrap" style="display:none;">
+          <button class="btn btn--outline" id="reviewsLoadMoreBtn" type="button">Load More Reviews</button>
+        </div>
       </div>
 
       <!-- Panel: Similar -->

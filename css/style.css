@@ -1,5 +1,5 @@
 /* =========================================================
-   CINEVRA — style.css
+  CINEVRA - style.css
    Base stylesheet: dipakai di SEMUA halaman.
    Berisi: reset, design tokens (variabel warna/font/spacing),
    navbar, tombol, card film, skeleton loading, dan helper umum.
@@ -211,7 +211,10 @@ input:focus-visible {
 }
 
 .scroll-top-btn:hover {
+  background: var(--accent-gold);
   border-color: var(--accent-gold);
+  color: #0a0a0d;
+  box-shadow: 0 10px 24px rgba(227, 179, 65, 0.35);
 }
 
 /* =========================================================
@@ -275,6 +278,7 @@ input:focus-visible {
 }
 
 .navbar__links a {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -283,22 +287,53 @@ input:focus-visible {
   font-size: 14.5px;
   font-weight: 500;
   color: var(--text-secondary);
-  transition: color var(--transition), background var(--transition);
+  overflow: hidden;
+  isolation: isolate;
+  transition: color 250ms ease, background 250ms ease, box-shadow 250ms ease, transform 250ms ease;
 }
 
 .navbar__links-icon {
   display: none; /* cuma kepake di menu mobile, lihat media query di bawah */
   flex-shrink: 0;
+  transition: transform 250ms ease;
+}
+
+/* garis kecil di tengah bawah teks, cuma dipakai buat state aktif
+   (bukan hover) supaya nggak berkedip tiap kali kursor lewat */
+.navbar__links a::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 3px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--accent-gold);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 250ms ease;
 }
 
 .navbar__links a:hover {
   color: var(--text-primary);
-  background: var(--surface);
+}
+
+.navbar__links a:hover .navbar__links-icon {
+  transform: translateY(-1px) scale(1.06);
+}
+
+.navbar__links a:hover::after {
+  transform: scaleX(1);
 }
 
 .navbar__links a.is-active {
-  color: var(--text-primary);
-  background: var(--surface);
+  color: var(--accent-gold-soft);
+  font-weight: 600;
+}
+
+.navbar__links a.is-active::after {
+  transform: scaleX(1);
+  background: var(--accent-gold-soft);
 }
 
 .navbar__search {
@@ -556,6 +591,13 @@ input:focus-visible {
   .navbar {
     padding: 14px 20px;
     gap: 12px;
+    transition: transform 280ms ease;
+  }
+
+  /* header disembunyikan pas scroll ke bawah, muncul lagi pas scroll
+     ke atas (class ini di-toggle dari main.js, lihat initNavbarAutoHide) */
+  .navbar.navbar--hidden {
+    transform: translateY(-100%);
   }
 
   .navbar__search {
@@ -601,7 +643,7 @@ input:focus-visible {
     gap: 4px;
     background: var(--bg-elevated);
     border: 1px solid var(--border-soft);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-sm);
     padding: 12px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     transform: translateY(-12px);
@@ -621,18 +663,38 @@ input:focus-visible {
     font-size: 15px;
   }
 
+  /* di menu mobile dropdown udah ada indikator aktif sendiri (pill emas),
+     jadi underline ala desktop ini dimatikan biar gak dobel/berantakan */
+  .navbar__links a::after {
+    display: none;
+  }
+
   .navbar__links-icon {
     display: block;
     color: var(--text-muted);
   }
 
+  /* halaman yang lagi aktif ditandai isi solid warna emas,
+     bukan cuma garis tipis di kiri */
   .navbar__links a.is-active {
-    background: var(--surface);
-    border-left: 3px solid var(--accent-gold);
-    padding-left: 11px;
+    background: var(--accent-gold);
+    color: #0a0a0d;
+    font-weight: 700;
   }
 
   .navbar__links a.is-active .navbar__links-icon {
+    color: #0a0a0d;
+  }
+
+  /* pas item menu ditekan (jari masih nempel di layar), langsung
+     "menyala" dulu sebagai feedback sebelum halamannya berpindah */
+  .navbar__links a:active {
+    background: rgba(227, 179, 65, 0.16);
+    color: var(--text-primary);
+    box-shadow: inset 0 0 0 1px rgba(227, 179, 65, 0.4);
+  }
+
+  .navbar__links a:active .navbar__links-icon {
     color: var(--accent-gold);
   }
 
@@ -669,6 +731,8 @@ input:focus-visible {
 
 .btn--primary:hover {
   background: var(--accent-gold-soft);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(227, 179, 65, 0.25);
 }
 
 .btn--ghost {
@@ -679,6 +743,8 @@ input:focus-visible {
 
 .btn--ghost:hover {
   border-color: var(--accent-gold);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
 }
 
 .btn--outline {
@@ -689,6 +755,8 @@ input:focus-visible {
 
 .btn--outline:hover {
   border-color: var(--accent-gold);
+  background: rgba(227, 179, 65, 0.08);
+  transform: translateY(-2px);
 }
 
 .btn--full {
@@ -734,15 +802,26 @@ input:focus-visible {
   color: var(--accent-gold);
 }
 
+.section__link svg {
+  transition: transform var(--transition);
+}
+
+.section__link:hover svg {
+  transform: translateX(3px);
+}
+
 /* =========================================================
-   MOVIE CARD — komponen yang dipakai berulang
+  MOVIE CARD - komponen yang dipakai berulang
    (home, movies, tv-shows, watchlist, similar)
    ========================================================= */
 .card-row {
   display: flex;
   gap: 22px;
   overflow-x: auto;
-  padding: 4px 4px 10px;
+  /* padding-top dilebarin supaya kartu yang naik pas di-hover gak kepotong.
+     ini penting karena overflow-x:auto bikin overflow-y ikut jadi auto
+     juga (aturan CSS), jadi apapun yang naik ke luar area ini bakal ke-clip */
+  padding: 18px 4px 10px;
   scroll-snap-type: x proximity;
 }
 
@@ -773,7 +852,7 @@ input:focus-visible {
   width: 160px;
   scroll-snap-align: start;
   background: transparent;
-  transition: transform var(--transition);
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .card-grid .movie-card {
@@ -782,7 +861,7 @@ input:focus-visible {
 }
 
 .movie-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-6px);
 }
 
 .movie-card__poster-wrap {
@@ -793,10 +872,15 @@ input:focus-visible {
   border-radius: var(--radius-md);
   border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  transition: box-shadow 320ms ease;
   /* memaksa browser bikin compositing layer baru, supaya clipping
      border-radius pada child <img> konsisten ke-render (beberapa
      browser suka "telat" nge-clip kalau elemen pakai aspect-ratio) */
   transform: translateZ(0);
+}
+
+.movie-card:hover .movie-card__poster-wrap {
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.5);
 }
 
 .movie-card__poster-wrap img {
@@ -805,11 +889,11 @@ input:focus-visible {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 400ms ease;
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .movie-card:hover .movie-card__poster-wrap img {
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
 /* gambar fallback (dari attachImageFallback di main.js) dibikin contain
@@ -863,7 +947,7 @@ img.img-fallback {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -871,20 +955,71 @@ img.img-fallback {
   color: var(--text-primary);
   backdrop-filter: blur(6px);
   opacity: 0;
-  transform: translateY(4px);
-  transition: opacity var(--transition), transform var(--transition), background var(--transition);
+  transform: translateY(4px) scale(1);
+  transition: opacity var(--transition), transform 200ms ease, background var(--transition),
+    border-color var(--transition), box-shadow var(--transition), color var(--transition);
 }
 
 .movie-card:hover .movie-card__watch-btn {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
+}
+
+/* hover di tombolnya sendiri (bukan cuma hover di card) -
+   sebelumnya gak ada feedback sama sekali di sini */
+.movie-card__watch-btn:hover {
+  background: var(--accent-gold-soft);
+  border-color: var(--accent-gold-soft);
+  color: #0a0a0d;
+  transform: translateY(0) scale(1.12);
+  box-shadow: 0 6px 16px rgba(227, 179, 65, 0.4);
+}
+
+.movie-card__watch-btn:active {
+  transform: translateY(0) scale(0.94);
 }
 
 .movie-card__watch-btn.is-active {
   background: var(--accent-gold);
+  border-color: var(--accent-gold);
   color: #0a0a0d;
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
+  box-shadow: 0 4px 14px rgba(227, 179, 65, 0.45);
+}
+
+.movie-card__watch-btn.is-active:hover {
+  background: var(--accent-gold-soft);
+  border-color: var(--accent-gold-soft);
+  box-shadow: 0 6px 18px rgba(227, 179, 65, 0.55);
+}
+
+/* animasi "pop" singkat tiap kali status wishlist di-toggle,
+   ditambahkan/dilepas via JS (lihat toggleWatchlist click handler) */
+@keyframes watchBtnPop {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(0) scale(1.35);
+  }
+  60% {
+    transform: translateY(0) scale(0.92);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* generic: dipakai juga di tombol wishlist non-card (hero & detail page) */
+.is-pop {
+  animation: watchBtnPop 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-pop {
+    animation: none;
+  }
 }
 
 .movie-card__watch-btn svg {

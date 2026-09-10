@@ -1,5 +1,5 @@
 /* =========================================================
-   CINEVRA — js/tv-shows.js
+  CINEVRA - js/tv-shows.js
    Logic khusus untuk tv-shows.html.
    Strukturnya mirip movies.js, bedanya:
    - pakai endpoint TMDB untuk TV (/discover/tv, /genre/tv/list)
@@ -30,10 +30,12 @@ document.addEventListener('DOMContentLoaded', () => {
   loadTVShows({ reset: true });
   loadListHeroBackdrop();
 
-  document.getElementById('loadMoreBtn').addEventListener('click', () => {
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  loadMoreBtn.addEventListener('click', () => {
     tvState.page += 1;
     loadTVShows({ reset: false });
   });
+  initInfiniteScroll(loadMoreBtn);
 });
 
 /**

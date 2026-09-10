@@ -1,5 +1,5 @@
 /* =========================================================
-   CINEVRA — js/watchlist.js
+  CINEVRA - js/watchlist.js
    Logic untuk watchlist.html.
    Semua datanya dari localStorage (lihat getWatchlist() di main.js),
    TIDAK ada fetch ke TMDB di halaman ini.
@@ -135,7 +135,7 @@ function renderWatchlistCard(item) {
 
   const meta = document.createElement('p');
   meta.className = 'movie-card__meta';
-  meta.textContent = item.year || '—';
+  meta.textContent = item.year || '-';
 
   card.appendChild(posterWrap);
   card.appendChild(title);

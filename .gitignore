@@ -1,4 +1,6 @@
-# API key — jangan commit file ini ke repository publik
+# API key - jangan commit file ini ke repository publik
 # Gunakan js/api.example.js sebagai template, lalu buat js/api.js lokal dengan key asli
 # js/api.js
 js/config.js
+AGENT.md
+design.md

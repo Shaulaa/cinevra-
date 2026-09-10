@@ -1,5 +1,5 @@
 /* =========================================================
-   CINEVRA — js/person.js
+  CINEVRA - js/person.js
    Logic untuk person.html (profil aktor/crew).
    Diakses lewat: person.html?id=123
    ========================================================= */
@@ -39,7 +39,7 @@ async function loadPerson(id) {
 }
 
 function renderPerson(person) {
-  document.title = `${person.name} — Cinevra`;
+  document.title = `${person.name} - Cinevra`;
 
   const photoUrl = getImageUrl(person.profile_path, 'poster');
   const photoWrap = document.getElementById('personPhoto');

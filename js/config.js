@@ -1,18 +1,6 @@
-// =========================================================
-// CINEVRA — js/config.example.js
-// =========================================================
-// File INI aman di-commit ke GitHub (cuma placeholder, bukan key asli).
-//
-// CARA PAKAI (development lokal):
-// 1. Copy file ini jadi "config.js" di folder yang sama (js/config.js)
-// 2. Ganti TMDB_API_KEY di bawah dengan API key TMDB kamu
-// 3. js/config.js SUDAH di-.gitignore, jadi key asli kamu gak akan
-//    pernah ke-push ke GitHub walaupun kamu commit/push berkali-kali
-//
-// Untuk deploy (Netlify/Vercel), key diisi otomatis lewat environment
-// variable saat proses build, lihat README.md bagian Deployment.
-// =========================================================
-
+// File ini di-generate OTOMATIS saat proses build oleh
+// scripts/generate-config.js. JANGAN diedit manual di server produksi,
+// dan file ini TIDAK disimpan di git (lihat .gitignore).
 window.CINEVRA_CONFIG = {
-  TMDB_API_KEY: "74417c1452a09c455c2da1d953446471",
+  TMDB_API_KEY: '',
 };

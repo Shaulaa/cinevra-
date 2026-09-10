@@ -1,5 +1,5 @@
 // =========================================================
-// CINEVRA — scripts/generate-config.js
+// CINEVRA - scripts/generate-config.js
 // =========================================================
 // Script ini TIDAK dijalankan manual. Netlify/Vercel akan
 // menjalankannya otomatis sebagai "build command" tiap kali deploy.

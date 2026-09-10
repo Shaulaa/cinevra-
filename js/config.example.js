@@ -1,5 +1,5 @@
 // =========================================================
-// CINEVRA — js/config.example.js
+// CINEVRA - js/config.example.js
 // =========================================================
 // File INI aman di-commit ke GitHub (cuma placeholder, bukan key asli).
 //

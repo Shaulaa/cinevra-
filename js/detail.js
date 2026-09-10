@@ -1,5 +1,5 @@
 /* =========================================================
-   CINEVRA — js/detail.js
+  CINEVRA - js/detail.js
    Logic untuk detail.html.
    Halaman ini dipakai untuk MOVIE dan TV SHOW sekaligus,
    dibedakan lewat parameter URL: detail.html?id=123&type=movie
@@ -8,6 +8,15 @@
 // data film/TV yang sedang ditampilkan, disimpan biar bisa dipakai
 // ulang oleh tombol watchlist & trailer tanpa fetch lagi
 let currentItem = null;
+
+// state untuk panel Reviews (dipisah dari loadDetail supaya kalau
+// fetch review-nya gagal atau lambat, sisa halaman detail tetap tampil normal)
+const reviewState = {
+  id: null,
+  type: 'movie',
+  page: 1,
+  totalPages: 1,
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
@@ -46,6 +55,7 @@ async function loadDetail(id, type) {
     renderGallery(details);
     renderSimilar(similar.results || [], type);
     setupTrailerButton(videos);
+    loadReviews(id, type);
 
     // catat sebagai "baru saja dilihat" (localStorage), dipakai buat
     // row "Recently Viewed" di home.html
@@ -89,7 +99,7 @@ function normalizeDetail(data, type) {
    ========================================================= */
 
 function renderDetail(item) {
-  document.title = `${item.title} — Cinevra`;
+  document.title = `${item.title} - Cinevra`;
 
   // backdrop
   const backdropUrl = getImageUrl(item.backdropPath, 'backdrop');
@@ -157,6 +167,7 @@ function renderDetail(item) {
   watchlistBtn.addEventListener('click', () => {
     toggleWatchlist(watchlistItem);
     updateDetailWatchlistBtn(watchlistBtn, watchlistItem);
+    playWatchBtnPop(watchlistBtn);
   });
 }
 
@@ -263,7 +274,7 @@ function renderCast(credits) {
 
     const roleEl = document.createElement('p');
     roleEl.className = 'cast-card__role';
-    roleEl.textContent = person.character || '—';
+    roleEl.textContent = person.character || '-';
 
     card.appendChild(photoWrap);
     card.appendChild(nameEl);
@@ -297,6 +308,173 @@ function renderGallery(data) {
     attachImageFallback(img);
     row.appendChild(img);
   });
+}
+
+/* =========================================================
+   REVIEWS (data asli dari TMDB)
+   ========================================================= */
+
+/**
+ * Ambil halaman pertama review, lalu pasang tombol "Load More Reviews".
+ * Dipanggil terpisah dari Promise.all utama di loadDetail supaya kalau
+ * TMDB gagal ngirim review untuk judul ini, sisa halaman detail
+ * (poster, cast, similar, dst) tetap tampil normal.
+ */
+async function loadReviews(id, type) {
+  reviewState.id = id;
+  reviewState.type = type;
+  reviewState.page = 1;
+  reviewState.totalPages = 1;
+
+  try {
+    const data = type === 'movie' ? await fetchMovieReviews(id) : await fetchTVReviews(id);
+    reviewState.totalPages = data.total_pages || 1;
+    renderReviews(data.results || [], { reset: true });
+  } catch (error) {
+    console.error('Gagal memuat review:', error);
+    renderReviews([], { reset: true });
+  }
+
+  document.getElementById('reviewsLoadMoreBtn').onclick = handleLoadMoreReviews;
+}
+
+async function handleLoadMoreReviews() {
+  const btn = document.getElementById('reviewsLoadMoreBtn');
+  btn.textContent = 'Loading...';
+  btn.disabled = true;
+
+  try {
+    reviewState.page += 1;
+    const data =
+      reviewState.type === 'movie'
+        ? await fetchMovieReviews(reviewState.id, reviewState.page)
+        : await fetchTVReviews(reviewState.id, reviewState.page);
+    reviewState.totalPages = data.total_pages || 1;
+    renderReviews(data.results || [], { reset: false });
+  } catch (error) {
+    console.error('Gagal memuat review tambahan:', error);
+    reviewState.page -= 1; // batal, biar tombolnya bisa dicoba lagi
+  } finally {
+    btn.textContent = 'Load More Reviews';
+    btn.disabled = false;
+  }
+}
+
+/**
+ * Render daftar review ke panel Reviews. reset=true dipakai waktu
+ * halaman detail baru dibuka (daftar lama dikosongkan dulu), reset=false
+ * dipakai waktu "Load More Reviews" diklik (hasil baru ditambah ke bawah).
+ */
+function renderReviews(results, { reset }) {
+  const list = document.getElementById('reviewsList');
+  const emptyState = document.getElementById('reviewsEmpty');
+  const loadMoreWrap = document.getElementById('reviewsLoadMoreWrap');
+
+  if (reset) list.innerHTML = '';
+
+  if (reset && results.length === 0) {
+    emptyState.style.display = 'block';
+    loadMoreWrap.style.display = 'none';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+  results.forEach((review) => list.appendChild(buildReviewCard(review)));
+  loadMoreWrap.style.display = reviewState.page >= reviewState.totalPages ? 'none' : 'flex';
+}
+
+/**
+ * Bikin satu kartu review dari data mentah TMDB. Nama author, isi
+ * review, dan avatar berasal dari user TMDB (bisa berisi karakter
+ * apa saja), jadi selalu dirender lewat textContent, bukan innerHTML.
+ */
+function buildReviewCard(review) {
+  const card = document.createElement('div');
+  card.className = 'review-card';
+
+  const header = document.createElement('div');
+  header.className = 'review-card__header';
+
+  const authorDetails = review.author_details || {};
+
+  const avatar = document.createElement('div');
+  avatar.className = 'review-card__avatar';
+  const avatarUrl = getReviewAvatarUrl(authorDetails.avatar_path);
+  if (avatarUrl) {
+    const img = document.createElement('img');
+    img.src = avatarUrl;
+    img.alt = review.author || 'Reviewer';
+    img.loading = 'lazy';
+    attachImageFallback(img);
+    avatar.appendChild(img);
+  } else {
+    avatar.textContent = (review.author || '?').charAt(0).toUpperCase();
+  }
+
+  const meta = document.createElement('div');
+  meta.className = 'review-card__meta';
+
+  const authorEl = document.createElement('p');
+  authorEl.className = 'review-card__author';
+  authorEl.textContent = review.author || 'Anonymous';
+  meta.appendChild(authorEl);
+
+  const dateText = formatReviewDate(review.created_at);
+  if (dateText) {
+    const dateEl = document.createElement('p');
+    dateEl.className = 'review-card__date';
+    dateEl.textContent = dateText;
+    meta.appendChild(dateEl);
+  }
+
+  header.appendChild(avatar);
+  header.appendChild(meta);
+
+  if (authorDetails.rating) {
+    const ratingEl = document.createElement('span');
+    ratingEl.className = 'review-card__rating';
+    const ratingIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    ratingIcon.setAttribute('viewBox', '0 0 24 24');
+    ratingIcon.innerHTML = '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>';
+    ratingEl.appendChild(ratingIcon);
+    ratingEl.appendChild(document.createTextNode(`${authorDetails.rating}/10`));
+    header.appendChild(ratingEl);
+  }
+
+  const content = document.createElement('p');
+  content.className = 'review-card__content';
+  content.textContent = review.content || '';
+
+  card.appendChild(header);
+  card.appendChild(content);
+
+  // review yang panjang di-ringkas dulu (line-clamp), ada tombol buat buka penuh
+  if ((review.content || '').length > 400) {
+    content.classList.add('is-clamped');
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'review-card__toggle';
+    toggleBtn.textContent = 'Baca selengkapnya';
+    toggleBtn.addEventListener('click', () => {
+      const stillClamped = content.classList.toggle('is-clamped');
+      toggleBtn.textContent = stillClamped ? 'Baca selengkapnya' : 'Sembunyikan';
+    });
+    card.appendChild(toggleBtn);
+  }
+
+  return card;
+}
+
+/**
+ * TMDB kadang mengirim avatar_path berupa link Gravatar lengkap
+ * (diawali "/https://..."), kadang path relatif TMDB biasa seperti
+ * gambar profil lain di aplikasi ini. Fungsi ini menyesuaikan keduanya.
+ */
+function getReviewAvatarUrl(avatarPath) {
+  if (!avatarPath) return null;
+  if (avatarPath.startsWith('/http')) return avatarPath.slice(1);
+  return getImageUrl(avatarPath, 'profile');
 }
 
 /* =========================================================

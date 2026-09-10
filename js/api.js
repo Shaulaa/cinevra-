@@ -1,5 +1,5 @@
 /* =========================================================
-   CINEVRA — js/api.js
+  CINEVRA - js/api.js
    Semua fungsi yang berhubungan dengan TMDB API ada di file ini.
    Halaman lain (home.js, movies.js, dst) tinggal memanggil
    fungsi-fungsi di bawah, tidak perlu tahu detail fetch-nya.
@@ -171,6 +171,10 @@ function fetchSimilarMovies(id) {
   return tmdbFetch(`/movie/${id}/similar`);
 }
 
+function fetchMovieReviews(id, page = 1) {
+  return tmdbFetch(`/movie/${id}/reviews`, { page });
+}
+
 function fetchMovieGenres() {
   return tmdbFetch('/genre/movie/list');
 }
@@ -214,6 +218,10 @@ function fetchTVVideos(id) {
 
 function fetchSimilarTV(id) {
   return tmdbFetch(`/tv/${id}/similar`);
+}
+
+function fetchTVReviews(id, page = 1) {
+  return tmdbFetch(`/tv/${id}/reviews`, { page });
 }
 
 function fetchTVGenres() {

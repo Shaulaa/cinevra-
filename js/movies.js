@@ -1,5 +1,5 @@
 /* =========================================================
-   CINEVRA — js/movies.js
+  CINEVRA - js/movies.js
    Logic khusus untuk movies.html:
    - ambil daftar genre buat filter dropdown
    - baca query "?search=" dari URL (dikirim dari navbar search)
@@ -38,10 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
   loadMovies({ reset: true });
   loadListHeroBackdrop();
 
-  document.getElementById('loadMoreBtn').addEventListener('click', () => {
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  loadMoreBtn.addEventListener('click', () => {
     movieState.page += 1;
     loadMovies({ reset: false });
   });
+  initInfiniteScroll(loadMoreBtn);
 });
 
 /**

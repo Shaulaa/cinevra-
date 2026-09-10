@@ -1,5 +1,5 @@
 /* =========================================================
-   CINEVRA — js/main.js
+  CINEVRA - js/main.js
    Kode yang dipakai bersama di SEMUA halaman:
    - navbar (menu mobile + link aktif)
    - watchlist (simpan/hapus/cek via localStorage)
@@ -14,6 +14,7 @@
 const WATCHLIST_STORAGE_KEY = 'cinevra_watchlist';
 const RECENTLY_VIEWED_KEY = 'cinevra_recently_viewed';
 const RECENTLY_VIEWED_MAX = 15;
+const INFINITE_SCROLL_STORAGE_KEY = 'cinevra_infinite_scroll';
 
 /* =========================================================
    NAVBAR
@@ -341,6 +342,9 @@ function getWatchlist() {
 
 function saveWatchlist(list) {
   localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(list));
+  // beritahu bagian lain di halaman yang sama (misalnya row "Continue Your
+  // Watchlist" di home.js) supaya bisa render ulang langsung tanpa refresh
+  window.dispatchEvent(new CustomEvent('watchlist:change', { detail: list }));
 }
 
 function isInWatchlist(id, type) {
@@ -372,6 +376,18 @@ function toggleWatchlist(item) {
   addToWatchlist(item);
   showToast('Ditambahkan ke Watchlist');
   return true;
+}
+
+/**
+ * Mainin animasi "pop" (.is-pop) di tombol wishlist tiap kali di-toggle.
+ * Class-nya dilepas dulu + dipaksa reflow, supaya animasi tetap jalan
+ * meskipun tombol yang sama diklik berkali-kali secara beruntun.
+ */
+function playWatchBtnPop(btn) {
+  btn.classList.remove('is-pop');
+  void btn.offsetWidth; // force reflow biar animasi bisa di-restart
+  btn.classList.add('is-pop');
+  btn.addEventListener('animationend', () => btn.classList.remove('is-pop'), { once: true });
 }
 
 /* =========================================================
@@ -435,7 +451,7 @@ function showToast(message) {
    ========================================================= */
 
 function formatYear(dateString) {
-  if (!dateString) return '—';
+  if (!dateString) return '-';
   return dateString.slice(0, 4);
 }
 
@@ -445,7 +461,7 @@ function formatRating(voteAverage) {
 }
 
 function formatRuntime(minutes) {
-  if (!minutes) return '—';
+  if (!minutes) return '-';
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
@@ -453,6 +469,18 @@ function formatRuntime(minutes) {
 
 function formatGenres(genres = []) {
   return genres.map((g) => g.name).join(', ');
+}
+
+/**
+ * Format tanggal review TMDB ("2024-03-11T08:12:00.000Z") jadi
+ * bentuk yang gampang dibaca ("11 Mar 2024"). Return string kosong
+ * kalau tanggalnya tidak valid, biar pemanggilnya tinggal cek falsy.
+ */
+function formatReviewDate(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 /**
@@ -566,7 +594,7 @@ function createMovieCard(item) {
 
   const meta = document.createElement('p');
   meta.className = 'movie-card__meta';
-  meta.textContent = item.year || '—';
+  meta.textContent = item.year || '-';
 
   card.appendChild(posterWrap);
   card.appendChild(title);
@@ -585,6 +613,7 @@ function createMovieCard(item) {
     event.stopPropagation();
     const nowActive = toggleWatchlist(item);
     watchBtn.classList.toggle('is-active', nowActive);
+    playWatchBtnPop(watchBtn);
   });
 
   return card;
@@ -835,7 +864,118 @@ function hidePageProgress() {
 }
 
 /* =========================================================
-   INIT — dijalankan di semua halaman
+   INFINITE SCROLL (opsional, dipakai di movies.html & tv-shows.html)
+   Tombol "Load More" yang sudah ada TETAP berfungsi normal.
+   Toggle ini cuma nambahin opsi: kalau dinyalakan, tombol yang sama
+   otomatis "diklik" begitu kelihatan di layar waktu di-scroll,
+   jadi browsing di HP gak perlu tap-tap manual tiap mau lanjut.
+   Preferensi disimpan di localStorage biar diingat di kunjungan berikutnya.
+   ========================================================= */
+
+function isInfiniteScrollEnabled() {
+  try {
+    return localStorage.getItem(INFINITE_SCROLL_STORAGE_KEY) === 'true';
+  } catch (error) {
+    return false;
+  }
+}
+
+function setInfiniteScrollEnabled(enabled) {
+  try {
+    localStorage.setItem(INFINITE_SCROLL_STORAGE_KEY, enabled ? 'true' : 'false');
+  } catch (error) {
+    // localStorage gak tersedia (mode private ketat, dsb), preferensi
+    // cukup berlaku untuk sesi ini saja, gak masalah
+  }
+}
+
+/**
+ * @param {HTMLButtonElement} loadMoreBtn - tombol Load More yang sudah ada di halaman
+ */
+function initInfiniteScroll(loadMoreBtn) {
+  const toggleInput = document.getElementById('infiniteScrollToggle');
+  if (!toggleInput || !loadMoreBtn) return;
+
+  toggleInput.checked = isInfiniteScrollEnabled();
+  let observer = null;
+
+  const observerCallback = (entries) => {
+    entries.forEach((entry) => {
+      // .click() otomatis gak akan ngapa-ngapain kalau tombolnya
+      // sedang disabled (lagi loading) atau disembunyikan (data habis),
+      // jadi gak perlu pengecekan tambahan di sini
+      if (entry.isIntersecting) loadMoreBtn.click();
+    });
+  };
+
+  const startObserving = () => {
+    if (observer) return;
+    // rootMargin dibuat lebar biar mulai loading sebelum tombolnya
+    // beneran keliatan penuh, jadi transisinya berasa mulus
+    observer = new IntersectionObserver(observerCallback, { rootMargin: '400px' });
+    observer.observe(loadMoreBtn);
+  };
+
+  const stopObserving = () => {
+    if (!observer) return;
+    observer.disconnect();
+    observer = null;
+  };
+
+  if (toggleInput.checked) startObserving();
+
+  toggleInput.addEventListener('change', () => {
+    setInfiniteScrollEnabled(toggleInput.checked);
+    toggleInput.checked ? startObserving() : stopObserving();
+  });
+}
+
+/* =========================================================
+   NAVBAR AUTO-HIDE (mobile)
+   Header disembunyikan pas user scroll ke bawah, biar layar HP
+   lebih lega buat lihat poster/konten. Muncul lagi begitu di-scroll
+   ke atas dikit aja, jadi menu/search tetap gampang dijangkau.
+   Class .navbar--hidden cuma berefek di breakpoint mobile (lihat style.css).
+   ========================================================= */
+
+function initNavbarAutoHide() {
+  const navbar = document.querySelector('.navbar');
+  if (!navbar) return;
+
+  let lastScrollY = window.scrollY;
+  let ticking = false;
+  const REVEAL_THRESHOLD = 80; // di atas titik ini (deket puncak halaman), header selalu tampil
+
+  const updateNavbar = () => {
+    const currentScrollY = window.scrollY;
+
+    // jangan sembunyikan header selagi menu hamburger atau search mobile lagi kebuka,
+    // biar panelnya gak keliatan "ngambang" tanpa header di atasnya
+    const menuOpen =
+      document.querySelector('.navbar__links.is-open') ||
+      document.querySelector('.navbar__search.is-mobile-open');
+
+    if (menuOpen || currentScrollY <= REVEAL_THRESHOLD) {
+      navbar.classList.remove('navbar--hidden');
+    } else if (currentScrollY > lastScrollY) {
+      navbar.classList.add('navbar--hidden'); // lagi scroll ke bawah
+    } else {
+      navbar.classList.remove('navbar--hidden'); // lagi scroll ke atas
+    }
+
+    lastScrollY = currentScrollY;
+    ticking = false;
+  };
+
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(updateNavbar);
+  });
+}
+
+/* =========================================================
+  INIT - dijalankan di semua halaman
    ========================================================= */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -845,4 +985,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileSearchToggle();
   initScrollReveal();
   initScrollTopButton();
+  initNavbarAutoHide();
 });
