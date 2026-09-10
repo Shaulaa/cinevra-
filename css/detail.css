@@ -83,6 +83,9 @@
 
 .detail-info {
   padding-top: 148px;
+  /* biar kolom ini boleh menyempit lebih kecil dari teks terpanjang
+     di dalamnya, bukan malah maksa seluruh grid melebar keluar layar */
+  min-width: 0;
 }
 
 .detail-info__title {
@@ -90,6 +93,7 @@
   font-size: clamp(26px, 3.4vw, 38px);
   font-weight: 600;
   margin-bottom: 10px;
+  overflow-wrap: break-word;
 }
 
 .detail-info__meta {
@@ -133,6 +137,7 @@
 
 .detail-info__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
@@ -394,5 +399,24 @@
 
   .detail-hero__back {
     left: 20px;
+  }
+
+  /* tab (Overview/Cast & Crew/Reviews/Similar) di-scroll horizontal,
+     bukan dipaksa muat sebaris (itu penyebab tab "Similar" kepotong) */
+  .detail-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .detail-tabs::-webkit-scrollbar {
+    height: 0;
+  }
+
+  .detail-tab {
+    flex-shrink: 0;
+    white-space: nowrap;
+    scroll-snap-align: start;
   }
 }

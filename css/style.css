@@ -70,7 +70,11 @@ html {
   -webkit-tap-highlight-color: transparent;
   /* jaga-jaga: cegah seluruh halaman bisa digeser ke samping kalau ada
      elemen yang kelebaran dari viewport, cuma .card-row yang boleh
-     scroll horizontal (di dalam dirinya sendiri) */
+     scroll horizontal (di dalam dirinya sendiri).
+     CATATAN: ini SENGAJA cuma dipasang di html, bukan di body juga.
+     Kalau dipasang di body, elemen dengan position:sticky di dalam
+     body (navbar-nya) berhenti nempel pas discroll, karena browser
+     nganggep body jadi "scroll container" sendiri. */
   overflow-x: hidden;
   width: 100%;
 }
@@ -81,7 +85,6 @@ body {
   font-family: var(--font-body);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
   width: 100%;
 }
 
@@ -572,6 +575,10 @@ input:focus-visible {
   }
 
   .navbar__search.is-mobile-open .navbar__search-close {
+    display: flex;
+  }
+
+  .navbar__mobile-actions {
     display: flex;
   }
 

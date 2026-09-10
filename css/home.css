@@ -206,7 +206,8 @@
 
 /* ---------- HOME SECTIONS (Trending / Popular) ---------- */
 .home-sections {
-  padding: 4px 0 60px;
+  padding-top: 4px;
+  padding-bottom: 60px;
 }
 
 /* ---------- BROWSE BY GENRE ---------- */
