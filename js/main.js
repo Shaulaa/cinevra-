@@ -317,6 +317,45 @@ function buildSearchResultRow(item) {
 }
 
 /* =========================================================
+   SURPRISE ME
+   Tombol di navbar, ada di semua halaman. Ngambil satu film random
+   dari beberapa halaman pertama Popular Movies, terus langsung
+   diarahkan ke halaman detail-nya. Buat orang yang bingung mau
+   nonton apa.
+   ========================================================= */
+
+function initSurpriseMeButton() {
+  const btn = document.getElementById('surpriseMeBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => handleSurpriseMe(btn));
+}
+
+async function handleSurpriseMe(btn) {
+  if (btn.classList.contains('is-loading')) return; // cegah klik dobel pas lagi fetch
+
+  btn.classList.add('is-loading');
+  btn.disabled = true;
+
+  try {
+    // random dari beberapa halaman pertama Popular Movies biar hasilnya
+    // bervariasi, bukan cuma muter-muter di 20 film yang sama
+    const page = Math.floor(Math.random() * 5) + 1;
+    const data = await fetchPopularMovies(page);
+    const results = data.results || [];
+
+    if (results.length === 0) throw new Error('Data film kosong');
+
+    const pick = results[Math.floor(Math.random() * results.length)];
+    window.location.href = `detail.html?id=${pick.id}&type=movie`;
+  } catch (error) {
+    console.error('Gagal mengambil film random:', error);
+    showToast('Gagal mengambil film random, coba lagi');
+    btn.classList.remove('is-loading');
+    btn.disabled = false;
+  }
+}
+
+/* =========================================================
    WATCHLIST (localStorage)
    Struktur data yang disimpan (array of object):
    {
@@ -986,4 +1025,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollReveal();
   initScrollTopButton();
   initNavbarAutoHide();
+  initSurpriseMeButton();
 });

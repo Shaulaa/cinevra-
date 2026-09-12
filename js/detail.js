@@ -30,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadDetail(id, type);
   bindTabs();
-  bindModal();
 });
 
 /* =========================================================
@@ -40,11 +39,13 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadDetail(id, type) {
   showPageProgress();
   try {
-    const [details, credits, videos, similar] = await Promise.all([
+    const [details, credits, videos, similar, recommended, images] = await Promise.all([
       type === 'movie' ? fetchMovieDetails(id) : fetchTVDetails(id),
       type === 'movie' ? fetchMovieCredits(id) : fetchTVCredits(id),
       type === 'movie' ? fetchMovieVideos(id) : fetchTVVideos(id),
       type === 'movie' ? fetchSimilarMovies(id) : fetchSimilarTV(id),
+      type === 'movie' ? fetchRecommendedMovies(id) : fetchRecommendedTV(id),
+      type === 'movie' ? fetchMovieImages(id) : fetchTVImages(id),
     ]);
 
     currentItem = normalizeDetail(details, type);
@@ -52,10 +53,12 @@ async function loadDetail(id, type) {
     renderDetail(currentItem, details);
     renderSidebar(details, credits, type);
     renderCast(credits);
-    renderGallery(details);
-    renderSimilar(similar.results || [], type);
+    renderGallery(images, currentItem);
+    renderCardRow('similarRow', similar.results || [], type, 'Tidak ada judul serupa.');
+    renderCardRow('recommendedRow', recommended.results || [], type, 'Belum ada rekomendasi untuk judul ini.');
     setupTrailerButton(videos);
     loadReviews(id, type);
+    loadWhereToWatch(id, type);
 
     // catat sebagai "baru saja dilihat" (localStorage), dipakai buat
     // row "Recently Viewed" di home.html
@@ -284,15 +287,37 @@ function renderCast(credits) {
 }
 
 /* =========================================================
-   GALLERY (pakai backdrop utama sebagai preview ringkas)
+   GALLERY (backdrop & poster dari endpoint /images TMDB, bukan cuma
+   backdrop_path/poster_path utama, jadi jauh lebih banyak)
    ========================================================= */
 
-function renderGallery(data) {
+function renderGallery(images, item) {
   const row = document.getElementById('galleryRow');
   row.innerHTML = '';
-  const images = [data.backdrop_path, data.poster_path].filter(Boolean);
 
-  if (images.length === 0) {
+  const backdrops = (images && images.backdrops) || [];
+  const posters = (images && images.posters) || [];
+
+  // gambar yang udah kepakai di hero & poster utama gak usah diulang lagi di gallery
+  const alreadyShown = new Set([item && item.posterPath, item && item.backdropPath].filter(Boolean));
+
+  // backdrop ditaruh duluan (lebih enak buat preview horizontal), baru poster.
+  // di-dedupe pakai file_path karena TMDB kadang ngirim entri yang sama
+  // lebih dari sekali (misal beda metadata vote tapi gambarnya identik),
+  // dan diurutkan dari vote_average tertinggi biar yang paling beda-beda
+  // kualitasnya (bukan cuma variasi crop tipis-tipis) muncul duluan
+  const seenPaths = new Set();
+  const combined = [...backdrops, ...posters]
+    .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
+    .filter((image) => {
+      if (alreadyShown.has(image.file_path)) return false;
+      if (seenPaths.has(image.file_path)) return false;
+      seenPaths.add(image.file_path);
+      return true;
+    })
+    .slice(0, 20);
+
+  if (combined.length === 0) {
     const empty = document.createElement('p');
     empty.className = 'reviews-empty';
     empty.textContent = 'Belum ada gambar tambahan.';
@@ -300,9 +325,9 @@ function renderGallery(data) {
     return;
   }
 
-  images.forEach((path) => {
+  combined.forEach((image) => {
     const img = document.createElement('img');
-    img.src = getImageUrl(path, 'backdropSmall');
+    img.src = getImageUrl(image.file_path, 'backdropSmall');
     img.alt = 'Gallery image';
     img.loading = 'lazy';
     attachImageFallback(img);
@@ -327,9 +352,19 @@ async function loadReviews(id, type) {
   reviewState.totalPages = 1;
 
   try {
-    const data = type === 'movie' ? await fetchMovieReviews(id) : await fetchTVReviews(id);
-    reviewState.totalPages = data.total_pages || 1;
-    renderReviews(data.results || [], { reset: true });
+    const first = type === 'movie' ? await fetchMovieReviews(id, 1) : await fetchTVReviews(id, 1);
+    reviewState.totalPages = first.total_pages || 1;
+    let results = first.results || [];
+
+    // langsung ambil halaman kedua juga kalau memang ada, biar review
+    // yang kelihatan di awal lebih banyak, gak perlu klik Load More dulu
+    if (reviewState.totalPages > 1) {
+      const second = type === 'movie' ? await fetchMovieReviews(id, 2) : await fetchTVReviews(id, 2);
+      results = results.concat(second.results || []);
+      reviewState.page = 2;
+    }
+
+    renderReviews(results, { reset: true });
   } catch (error) {
     console.error('Gagal memuat review:', error);
     renderReviews([], { reset: true });
@@ -478,15 +513,22 @@ function getReviewAvatarUrl(avatarPath) {
 }
 
 /* =========================================================
-   SIMILAR MOVIES/TV SHOWS
+   SIMILAR & RECOMMENDED MOVIES/TV SHOWS
+   Dipakai bareng buat panel Similar dan panel Recommended.
+   Similar dari TMDB dicocokkan lewat genre/keyword, sedangkan
+   Recommended dicocokkan lewat pola tontonan user lain, jadi
+   dua endpoint terpisah tapi cara render-nya sama persis.
    ========================================================= */
 
-function renderSimilar(items, type) {
-  const row = document.getElementById('similarRow');
+function renderCardRow(containerId, items, type, emptyMessage) {
+  const row = document.getElementById(containerId);
   row.innerHTML = '';
 
   if (items.length === 0) {
-    row.innerHTML = `<p class="reviews-empty">Tidak ada judul serupa.</p>`;
+    const empty = document.createElement('p');
+    empty.className = 'reviews-empty';
+    empty.textContent = emptyMessage;
+    row.appendChild(empty);
     return;
   }
 
@@ -501,6 +543,162 @@ function renderSimilar(items, type) {
     });
     row.appendChild(card);
   });
+}
+
+/* =========================================================
+   WHERE TO WATCH
+   Data provider streaming/sewa/beli per negara dari TMDB (sumber
+   aslinya JustWatch). Negara yang dipakai diprioritaskan ID, lalu
+   US, lalu negara pertama yang tersedia di data kalau dua itu
+   tidak ada. Section-nya disembunyikan total kalau memang tidak
+   ada data provider sama sekali untuk judul ini.
+   ========================================================= */
+
+const WATCH_PROVIDER_GROUPS = [
+  { key: 'flatrate', label: 'Streaming' },
+  { key: 'free', label: 'Gratis' },
+  { key: 'ads', label: 'Gratis (Iklan)' },
+  { key: 'rent', label: 'Sewa' },
+  { key: 'buy', label: 'Beli' },
+];
+
+async function loadWhereToWatch(id, type) {
+  const section = document.getElementById('whereToWatchSection');
+  if (!section) return;
+
+  try {
+    const data = type === 'movie' ? await fetchMovieWatchProviders(id) : await fetchTVWatchProviders(id);
+    renderWhereToWatch(data.results || {});
+  } catch (error) {
+    console.error('Gagal memuat data Where to Watch:', error);
+    section.style.display = 'none';
+  }
+}
+
+/**
+ * TMDB cuma ngasih satu link per negara (halaman watch di TMDB sendiri,
+ * yang isinya nge-list smua provider terus baru diarahkan lagi ke
+ * JustWatch). Gak ada API resminya buat deep link langsung ke halaman
+ * judul ini di tiap provider. Jadi biar klik logo gak muter dulu lewat
+ * TMDB, tiap provider populer dipetakan ke URL pencarian di situs
+ * aslinya masing-masing, provider yang belum ada di daftar fallback ke
+ * pencarian Google (tetap lebih langsung dibanding lewat TMDB).
+ */
+const PROVIDER_SEARCH_URL_BUILDERS = {
+  netflix: (q) => `https://www.netflix.com/search?q=${q}`,
+  'disney plus': (q) => `https://www.disneyplus.com/search?q=${q}`,
+  'amazon prime video': (q) => `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${q}`,
+  'amazon video': (q) => `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${q}`,
+  'apple tv': (q) => `https://tv.apple.com/search?term=${q}`,
+  'apple tv plus': (q) => `https://tv.apple.com/search?term=${q}`,
+  max: (q) => `https://play.max.com/search?q=${q}`,
+  'hbo max': (q) => `https://play.max.com/search?q=${q}`,
+  hulu: (q) => `https://www.hulu.com/search?q=${q}`,
+  vidio: (q) => `https://www.vidio.com/search?q=${q}`,
+  iqiyi: (q) => `https://www.iq.com/search?query=${q}`,
+  wetv: (q) => `https://wetv.vip/en/search?q=${q}`,
+  viu: (q) => `https://www.viu.com/ott/id/id/all/search?q=${q}`,
+  'google play movies': (q) => `https://play.google.com/store/search?q=${q}&c=movies`,
+  youtube: (q) => `https://www.youtube.com/results?search_query=${q}`,
+  'youtube premium': (q) => `https://www.youtube.com/results?search_query=${q}`,
+};
+
+function buildProviderWatchUrl(provider, title, fallbackLink) {
+  const name = (provider.provider_name || '').toLowerCase();
+  const query = encodeURIComponent(title || provider.provider_name || '');
+
+  const matchedKey = Object.keys(PROVIDER_SEARCH_URL_BUILDERS).find((key) => name.includes(key));
+  if (matchedKey) return PROVIDER_SEARCH_URL_BUILDERS[matchedKey](query);
+
+  if (title) {
+    return `https://www.google.com/search?q=${encodeURIComponent(`${provider.provider_name} ${title}`)}`;
+  }
+
+  return fallbackLink || null;
+}
+
+function renderWhereToWatch(resultsByCountry) {
+  const section = document.getElementById('whereToWatchSection');
+  const countryLabel = document.getElementById('watchProvidersCountry');
+  const groupsWrap = document.getElementById('watchProvidersGroups');
+
+  const countryCode = resultsByCountry['ID']
+    ? 'ID'
+    : resultsByCountry['US']
+      ? 'US'
+      : Object.keys(resultsByCountry)[0];
+
+  const countryData = countryCode ? resultsByCountry[countryCode] : null;
+
+  const hasAnyProvider = countryData && WATCH_PROVIDER_GROUPS.some((g) => (countryData[g.key] || []).length > 0);
+
+  if (!hasAnyProvider) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  countryLabel.textContent = countryCode;
+  groupsWrap.innerHTML = '';
+
+  WATCH_PROVIDER_GROUPS.forEach((group) => {
+    const providers = countryData[group.key] || [];
+    if (providers.length === 0) return;
+
+    const groupEl = document.createElement('div');
+    groupEl.className = 'watch-providers__group';
+
+    const labelEl = document.createElement('p');
+    labelEl.className = 'watch-providers__group-label';
+    labelEl.textContent = group.label;
+    groupEl.appendChild(labelEl);
+
+    const logosWrap = document.createElement('div');
+    logosWrap.className = 'watch-providers__logos';
+
+    providers
+      .slice()
+      .sort((a, b) => (a.display_priority || 0) - (b.display_priority || 0))
+      .forEach((provider) => {
+        const watchUrl = buildProviderWatchUrl(provider, currentItem && currentItem.title, countryData.link);
+        logosWrap.appendChild(buildProviderLogo(provider, watchUrl));
+      });
+
+    groupEl.appendChild(logosWrap);
+    groupsWrap.appendChild(groupEl);
+  });
+}
+
+/**
+ * Satu logo provider (Netflix, Disney+, dst). Dibuat jadi link keluar
+ * langsung ke halaman pencarian judul ini di situs providernya sendiri
+ * (lihat buildProviderWatchUrl), bukan muter dulu lewat TMDB. Kalau
+ * gak ada URL yang bisa dibuat, tilenya dibikin non-interaktif aja.
+ */
+function buildProviderLogo(provider, watchUrl) {
+  const tile = document.createElement(watchUrl ? 'a' : 'div');
+  if (watchUrl) {
+    tile.href = watchUrl;
+    tile.target = '_blank';
+    tile.rel = 'noopener noreferrer';
+  }
+  tile.className = 'watch-providers__logo';
+  tile.title = provider.provider_name;
+  tile.setAttribute('aria-label', provider.provider_name);
+
+  const logoUrl = getImageUrl(provider.logo_path, 'providerLogo');
+  if (logoUrl) {
+    const img = document.createElement('img');
+    img.src = logoUrl;
+    img.alt = provider.provider_name;
+    img.loading = 'lazy';
+    attachImageFallback(img);
+    tile.appendChild(img);
+  } else {
+    tile.textContent = provider.provider_name;
+  }
+
+  return tile;
 }
 
 /* =========================================================
@@ -520,7 +718,9 @@ function bindTabs() {
 }
 
 /* =========================================================
-   TRAILER MODAL
+   TRAILER (embed langsung di halaman)
+   Tombol "Watch Trailer" nge-toggle player yang nempel di halaman,
+   bukan buka modal/popup dan bukan pindah ke YouTube.
    ========================================================= */
 
 function setupTrailerButton(videos) {
@@ -529,41 +729,54 @@ function setupTrailerButton(videos) {
   );
 
   const btn = document.getElementById('detailTrailerBtn');
+  const btnText = document.getElementById('detailTrailerBtnText');
+
+  // trailer lama (kalau ada) ditutup dulu setiap kali halaman detail baru dimuat
+  closeInlineTrailer();
 
   if (!trailer) {
     btn.disabled = true;
-    btn.textContent = 'Trailer Unavailable';
+    if (btnText) btnText.textContent = 'Trailer Unavailable';
     return;
   }
 
-  btn.addEventListener('click', () => openTrailerModal(trailer.key));
+  btn.disabled = false;
+  if (btnText) btnText.textContent = 'Watch Trailer';
+  btn.onclick = () => toggleInlineTrailer(trailer.key, btnText);
 }
 
-function bindModal() {
-  const overlay = document.getElementById('trailerModal');
-  document.getElementById('modalCloseBtn').addEventListener('click', closeTrailerModal);
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeTrailerModal();
-  });
+function toggleInlineTrailer(youtubeKey, btnText) {
+  const section = document.getElementById('trailerInline');
+  const isOpen = section.style.display !== 'none';
 
-  // tutup modal dengan tombol Esc, tapi cuma kalau modalnya lagi kebuka
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && overlay.classList.contains('is-open')) {
-      closeTrailerModal();
-    }
-  });
+  if (isOpen) {
+    closeInlineTrailer();
+    return;
+  }
+
+  const wrap = document.getElementById('trailerInlineWrap');
+  const iframe = document.createElement('iframe');
+  iframe.src = `https://www.youtube.com/embed/${youtubeKey}?autoplay=1`;
+  iframe.title = 'Trailer';
+  iframe.allow = 'autoplay; encrypted-media';
+  iframe.allowFullscreen = true;
+  wrap.innerHTML = '';
+  wrap.appendChild(iframe);
+
+  section.style.display = 'block';
+  if (btnText) btnText.textContent = 'Hide Trailer';
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function openTrailerModal(youtubeKey) {
-  const overlay = document.getElementById('trailerModal');
-  const wrap = document.getElementById('modalVideoWrap');
-  wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${youtubeKey}?autoplay=1" title="Trailer" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-  overlay.classList.add('is-open');
-}
+function closeInlineTrailer() {
+  const section = document.getElementById('trailerInline');
+  const wrap = document.getElementById('trailerInlineWrap');
+  const btnText = document.getElementById('detailTrailerBtnText');
+  if (!section) return;
 
-function closeTrailerModal() {
-  document.getElementById('trailerModal').classList.remove('is-open');
-  document.getElementById('modalVideoWrap').innerHTML = ''; // hentikan video saat modal ditutup
+  section.style.display = 'none';
+  if (wrap) wrap.innerHTML = ''; // hentikan video begitu ditutup
+  if (btnText && btnText.textContent === 'Hide Trailer') btnText.textContent = 'Watch Trailer';
 }
 
 /* =========================================================

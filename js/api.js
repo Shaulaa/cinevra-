@@ -30,6 +30,7 @@ const IMAGE_SIZES = {
   backdrop: 'w1280',
   backdropSmall: 'w780',
   profile: 'w185',
+  providerLogo: 'w92',
 };
 
 /**
@@ -167,8 +168,37 @@ function fetchMovieVideos(id) {
   return tmdbFetch(`/movie/${id}/videos`);
 }
 
+/**
+ * Endpoint khusus gambar TMDB, isinya jauh lebih banyak dibanding
+ * cuma backdrop_path/poster_path utama (bisa puluhan backdrop & poster).
+ * Dipakai buat memperbanyak isi Gallery di halaman detail.
+ * include_image_language dikasih 'en,null' biar hasilnya gak cuma
+ * kebatasi ke gambar berbahasa Inggris doang, backdrop tanpa teks
+ * (null) ikut masuk jadi variasinya lebih banyak.
+ */
+function fetchMovieImages(id) {
+  return tmdbFetch(`/movie/${id}/images`, { include_image_language: 'en,null' });
+}
+
 function fetchSimilarMovies(id) {
   return tmdbFetch(`/movie/${id}/similar`);
+}
+
+/**
+ * Endpoint recommendations TMDB beda dari similar. Similar cocok berdasarkan
+ * genre/keyword, sedangkan recommendations berdasarkan pola tontonan user lain
+ * ("orang yang suka ini biasanya juga suka itu").
+ */
+function fetchRecommendedMovies(id, page = 1) {
+  return tmdbFetch(`/movie/${id}/recommendations`, { page });
+}
+
+/**
+ * Daftar platform streaming/rental/beli per negara buat satu judul,
+ * lengkap dengan logo resmi. Data disediakan TMDB lewat JustWatch.
+ */
+function fetchMovieWatchProviders(id) {
+  return tmdbFetch(`/movie/${id}/watch/providers`);
 }
 
 function fetchMovieReviews(id, page = 1) {
@@ -216,8 +246,20 @@ function fetchTVVideos(id) {
   return tmdbFetch(`/tv/${id}/videos`);
 }
 
+function fetchTVImages(id) {
+  return tmdbFetch(`/tv/${id}/images`, { include_image_language: 'en,null' });
+}
+
 function fetchSimilarTV(id) {
   return tmdbFetch(`/tv/${id}/similar`);
+}
+
+function fetchRecommendedTV(id, page = 1) {
+  return tmdbFetch(`/tv/${id}/recommendations`, { page });
+}
+
+function fetchTVWatchProviders(id) {
+  return tmdbFetch(`/tv/${id}/watch/providers`);
 }
 
 function fetchTVReviews(id, page = 1) {

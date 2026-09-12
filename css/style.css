@@ -490,20 +490,66 @@ input:focus-visible {
 .navbar__watchlist-link {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
-  font-size: 14px;
-  font-weight: 500;
   color: var(--text-secondary);
   transition: border-color var(--transition), color var(--transition);
-  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.navbar__watchlist-link svg {
+  width: 18px;
+  height: 18px;
 }
 
 .navbar__watchlist-link:hover {
   color: var(--text-primary);
   border-color: var(--accent-gold);
+}
+
+/* tombol "Surprise Me", ada di semua halaman lewat navbar */
+.navbar__surprise-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(227, 179, 65, 0.35);
+  background: rgba(227, 179, 65, 0.08);
+  color: var(--accent-gold-soft);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: border-color var(--transition), background var(--transition), transform var(--transition);
+}
+
+.navbar__surprise-btn:hover {
+  border-color: var(--accent-gold);
+  background: rgba(227, 179, 65, 0.16);
+  transform: translateY(-2px);
+}
+
+.navbar__surprise-btn svg {
+  flex-shrink: 0;
+  transition: transform 500ms ease;
+}
+
+.navbar__surprise-btn.is-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.navbar__surprise-btn.is-loading svg {
+  animation: surprise-spin 0.6s linear infinite;
+}
+
+@keyframes surprise-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* toggle menu mobile (hamburger), disembunyikan di desktop */
@@ -699,6 +745,24 @@ input:focus-visible {
   }
 
   .navbar__watchlist-link {
+    display: none;
+  }
+
+  /* di mobile tombolnya jadi icon-only bulat, disamakan sama tombol
+     search-mobile biar seragam, tapi tetap kelihatan (beda dari
+     watchlist-link yang disembunyikan total) */
+  .navbar__surprise-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    background: none;
+    border: none;
+    color: var(--text-primary);
+  }
+
+  .navbar__surprise-btn-text {
     display: none;
   }
 }

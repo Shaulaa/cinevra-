@@ -248,6 +248,15 @@
   padding-bottom: 8px;
 }
 
+.gallery-row::-webkit-scrollbar {
+  height: 6px;
+}
+
+.gallery-row::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
 .gallery-row img {
   width: 240px;
   height: 140px;
@@ -421,45 +430,116 @@
   padding: 10px 0 60px;
 }
 
-/* ---------- TRAILER MODAL ---------- */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 500;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(5, 5, 6, 0.85);
-  padding: 24px;
-}
-
-.modal-overlay.is-open {
-  display: flex;
-}
-
-.modal-box {
+/* ---------- WHERE TO WATCH ---------- */
+.watch-providers {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  margin-bottom: 32px;
   position: relative;
+  z-index: 1;
+}
+
+.watch-providers__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.watch-providers__head .about-block__title {
+  margin-bottom: 0;
+}
+
+.watch-providers__country {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.watch-providers__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.watch-providers__group-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.watch-providers__logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.watch-providers__logo {
+  display: block;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  transition: transform var(--transition), border-color var(--transition);
+}
+
+.watch-providers__logo:hover,
+.watch-providers__logo:focus-visible {
+  transform: translateY(-3px);
+  border-color: var(--accent-gold);
+}
+
+.watch-providers__logo:active {
+  transform: scale(0.95);
+}
+
+.watch-providers__logo img {
   width: 100%;
-  max-width: 860px;
+  height: 100%;
+  object-fit: cover;
+}
+
+.watch-providers__attribution {
+  margin-top: 16px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.watch-providers__attribution a {
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
+
+/* ---------- TRAILER (embed di halaman) ---------- */
+.trailer-inline {
+  margin-bottom: 32px;
+  position: relative;
+  z-index: 1;
+}
+
+.trailer-inline__wrap {
+  width: 100%;
   aspect-ratio: 16 / 9;
+  max-width: 860px;
   background: #000;
   border-radius: var(--radius-md);
   overflow: hidden;
 }
 
-.modal-box iframe {
+.trailer-inline__wrap iframe {
   width: 100%;
   height: 100%;
   border: none;
-}
-
-.modal-close {
-  position: absolute;
-  top: -42px;
-  right: 0;
-  background: none;
-  border: none;
-  color: var(--text-primary);
 }
 
 @media (max-width: 1000px) {

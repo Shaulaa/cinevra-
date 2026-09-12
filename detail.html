@@ -49,7 +49,21 @@
       <div class="navbar__search-results" id="navSearchResults"></div>
     </form>
 
-    <a href="watchlist.html" class="navbar__watchlist-link">Watchlist</a>
+    <a href="watchlist.html" class="navbar__watchlist-link" aria-label="Watchlist">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"></path></svg>
+    </a>
+
+    <button class="navbar__surprise-btn" id="surpriseMeBtn" type="button" aria-label="Surprise Me, pilihkan film random">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+        <circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="15.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="8.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="15.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"></circle>
+      </svg>
+      <span class="navbar__surprise-btn-text">Surprise Me</span>
+    </button>
 
     <div class="navbar__mobile-actions">
       <button class="navbar__mobile-search-btn" id="mobileSearchBtn" type="button" aria-label="Cari">
@@ -92,7 +106,7 @@
           <div class="detail-info__actions">
             <button class="btn btn--primary" id="detailTrailerBtn" type="button">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-              Watch Trailer
+              <span id="detailTrailerBtnText">Watch Trailer</span>
             </button>
             <button class="btn btn--ghost" id="detailWatchlistBtn" type="button">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"/></svg>
@@ -107,12 +121,29 @@
         </aside>
       </div>
 
+      <!-- ================= TRAILER (embed di halaman, bukan modal/popup) ================= -->
+      <!-- disembunyikan lewat JS, baru diisi iframe pas tombol Watch Trailer ditekan -->
+      <div class="trailer-inline reveal" id="trailerInline" style="display:none;">
+        <div class="trailer-inline__wrap" id="trailerInlineWrap"></div>
+      </div>
+
+      <!-- ================= WHERE TO WATCH ================= -->
+      <!-- disembunyikan lewat JS kalau memang tidak ada data provider buat judul ini -->
+      <div class="watch-providers reveal" id="whereToWatchSection" style="display:none;">
+        <div class="watch-providers__head">
+          <h3 class="about-block__title">Where to Watch <span class="watch-providers__country" id="watchProvidersCountry"></span></h3>
+        </div>
+        <div class="watch-providers__groups" id="watchProvidersGroups"></div>
+        <p class="watch-providers__attribution">Data ketersediaan streaming oleh JustWatch</p>
+      </div>
+
       <!-- ================= TABS ================= -->
       <div class="detail-tabs">
         <button class="detail-tab is-active" data-tab="overview" type="button">Overview</button>
         <button class="detail-tab" data-tab="cast" type="button">Cast &amp; Crew</button>
         <button class="detail-tab" data-tab="reviews" type="button">Reviews</button>
         <button class="detail-tab" data-tab="similar" type="button">Similar</button>
+        <button class="detail-tab" data-tab="recommended" type="button">Recommended</button>
       </div>
 
       <!-- Panel: Overview -->
@@ -145,6 +176,11 @@
       <div class="detail-tab-panel reveal" data-panel="similar">
         <div class="card-row" id="similarRow"></div>
       </div>
+
+      <!-- Panel: Recommended (beda dari Similar, dicocokkan lewat pola tontonan user lain) -->
+      <div class="detail-tab-panel reveal" data-panel="recommended">
+        <div class="card-row" id="recommendedRow"></div>
+      </div>
     </div>
   </div>
 
@@ -166,16 +202,6 @@
       <span class="site-footer__note">Dibuat untuk tugas Pemrograman Web 1 &middot; Data film oleh TMDB</span>
     </div>
   </footer>
-
-  <!-- ================= TRAILER MODAL ================= -->
-  <div class="modal-overlay" id="trailerModal">
-    <div class="modal-box">
-      <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Tutup">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </button>
-      <div id="modalVideoWrap"></div>
-    </div>
-  </div>
 
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>
