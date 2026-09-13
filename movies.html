@@ -96,6 +96,15 @@
 
     <!-- ================= FILTER BAR ================= -->
     <div class="filter-bar">
+      <label class="filter-bar__search" aria-label="Cari film">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input id="pageSearchInput" type="search" placeholder="Cari judul film..." value="">
+        <button id="pageSearchClearBtn" type="button" class="filter-bar__search-clear" aria-label="Hapus pencarian">Clear</button>
+      </label>
+
       <div class="multi-select" id="genreMultiSelect">
         <button type="button" class="multi-select__toggle" id="genreToggle">
           <span id="genreToggleLabel">All Genres</span>

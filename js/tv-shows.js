@@ -13,15 +13,37 @@ const tvState = {
   genreIds: [],
   year: '',
   sortBy: 'popularity.desc',
+  searchQuery: '',
 };
 
+function syncTVQueryState() {
+  const params = new URLSearchParams();
+  if (tvState.searchQuery) params.set('search', tvState.searchQuery);
+  if (tvState.genreIds.length) params.set('genre', tvState.genreIds.join(','));
+  if (tvState.year) params.set('year', tvState.year);
+  if (tvState.sortBy && tvState.sortBy !== 'popularity.desc') params.set('sort', tvState.sortBy);
+
+  const queryString = params.toString();
+  const nextUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`;
+  window.history.replaceState({}, '', nextUrl);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  tvState.searchQuery = params.get('search') || '';
+  const urlGenre = params.get('genre');
+  if (urlGenre) tvState.genreIds = urlGenre.split(',').filter(Boolean);
+  tvState.year = params.get('year') || '';
+  tvState.sortBy = params.get('sort') || 'popularity.desc';
+
+  setupTVSearchMode();
   initGenreMultiSelect({
     fetchGenres: fetchTVGenres,
     initialIds: tvState.genreIds,
     onChange: (ids) => {
       tvState.genreIds = ids;
       tvState.page = 1;
+      syncTVQueryState();
       loadTVShows({ reset: true });
     },
   });
@@ -62,16 +84,77 @@ async function loadListHeroBackdrop() {
   }
 }
 
+function setupTVSearchMode() {
+  const pageSearchInput = document.getElementById('pageSearchInput');
+  const pageSearchClearBtn = document.getElementById('pageSearchClearBtn');
+  const isSearchActive = Boolean(tvState.searchQuery);
+
+  if (pageSearchInput) {
+    pageSearchInput.value = tvState.searchQuery;
+  }
+
+  if (pageSearchClearBtn) {
+    pageSearchClearBtn.hidden = !isSearchActive;
+  }
+
+  if (!isSearchActive) {
+    document.getElementById('pageTitle').textContent = 'Popular TV Shows';
+    document.getElementById('pageSubtitle').textContent = 'Jelajahi serial TV dari seluruh dunia, dari drama sampai animasi';
+    return;
+  }
+
+  document.getElementById('pageTitle').textContent = 'Search results';
+  document.getElementById('pageSubtitle').textContent = `Menampilkan hasil untuk "${tvState.searchQuery}"`;
+
+  document.getElementById('genreToggle').disabled = true;
+  document.getElementById('yearFilter').disabled = true;
+  document.getElementById('sortFilter').disabled = true;
+
+  const searchInput = document.querySelector('.navbar__search input');
+  if (searchInput) searchInput.value = tvState.searchQuery;
+}
+
 function bindTVFilterEvents() {
+  const pageSearchInput = document.getElementById('pageSearchInput');
+  const pageSearchClearBtn = document.getElementById('pageSearchClearBtn');
+
+  if (pageSearchInput) {
+    let searchTimer = null;
+    pageSearchInput.addEventListener('input', () => {
+      const nextQuery = pageSearchInput.value.trim();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        tvState.searchQuery = nextQuery;
+        tvState.page = 1;
+        syncTVQueryState();
+        setupTVSearchMode();
+        loadTVShows({ reset: true });
+      }, 300);
+    });
+  }
+
+  if (pageSearchClearBtn) {
+    pageSearchClearBtn.addEventListener('click', () => {
+      tvState.searchQuery = '';
+      if (pageSearchInput) pageSearchInput.value = '';
+      tvState.page = 1;
+      syncTVQueryState();
+      setupTVSearchMode();
+      loadTVShows({ reset: true });
+    });
+  }
+
   document.getElementById('yearFilter').addEventListener('change', (e) => {
     tvState.year = e.target.value;
     tvState.page = 1;
+    syncTVQueryState();
     loadTVShows({ reset: true });
   });
 
   document.getElementById('sortFilter').addEventListener('change', (e) => {
     tvState.sortBy = e.target.value;
     tvState.page = 1;
+    syncTVQueryState();
     loadTVShows({ reset: true });
   });
 }
@@ -91,12 +174,14 @@ async function loadTVShows({ reset }) {
   }
 
   try {
-    const data = await fetchTVByFilter({
-      page: tvState.page,
-      genreId: tvState.genreIds.join('|'),
-      year: tvState.year,
-      sortBy: tvState.sortBy,
-    });
+    const data = tvState.searchQuery
+      ? await searchTV(tvState.searchQuery, tvState.page)
+      : await fetchTVByFilter({
+          page: tvState.page,
+          genreId: tvState.genreIds.join('|'),
+          year: tvState.year,
+          sortBy: tvState.sortBy,
+        });
 
     tvState.totalPages = data.total_pages || 1;
 
@@ -125,6 +210,11 @@ async function loadTVShows({ reset }) {
 
     document.getElementById('resultCount').textContent =
       data.total_results !== undefined ? `${data.total_results.toLocaleString('id-ID')} TV shows found` : '';
+
+    const pageSearchInput = document.getElementById('pageSearchInput');
+    if (pageSearchInput && tvState.searchQuery) {
+      pageSearchInput.value = tvState.searchQuery;
+    }
   } catch (error) {
     console.error('Gagal memuat TV shows:', error);
     if (reset) {

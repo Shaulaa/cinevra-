@@ -17,11 +17,25 @@ const movieState = {
   searchQuery: '',
 };
 
+function syncMovieQueryState() {
+  const params = new URLSearchParams();
+  if (movieState.searchQuery) params.set('search', movieState.searchQuery);
+  if (movieState.genreIds.length) params.set('genre', movieState.genreIds.join(','));
+  if (movieState.year) params.set('year', movieState.year);
+  if (movieState.sortBy && movieState.sortBy !== 'popularity.desc') params.set('sort', movieState.sortBy);
+
+  const queryString = params.toString();
+  const nextUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`;
+  window.history.replaceState({}, '', nextUrl);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   movieState.searchQuery = params.get('search') || '';
   const urlGenre = params.get('genre');
-  if (urlGenre) movieState.genreIds = [urlGenre];
+  if (urlGenre) movieState.genreIds = urlGenre.split(',').filter(Boolean);
+  movieState.year = params.get('year') || '';
+  movieState.sortBy = params.get('sort') || 'popularity.desc';
 
   setupSearchMode();
   initGenreMultiSelect({
@@ -30,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     onChange: (ids) => {
       movieState.genreIds = ids;
       movieState.page = 1;
+      syncMovieQueryState();
       loadMovies({ reset: true });
     },
   });
@@ -77,30 +92,77 @@ async function loadListHeroBackdrop() {
  * (TMDB search endpoint tidak mendukung kombinasi filter genre).
  */
 function setupSearchMode() {
-  if (!movieState.searchQuery) return;
+  const pageSearchInput = document.getElementById('pageSearchInput');
+  const pageSearchClearBtn = document.getElementById('pageSearchClearBtn');
+  const isSearchActive = Boolean(movieState.searchQuery);
 
-  document.getElementById('pageTitle').textContent = `Search results`;
+  if (pageSearchInput) {
+    pageSearchInput.value = movieState.searchQuery;
+    pageSearchInput.disabled = false;
+  }
+
+  if (pageSearchClearBtn) {
+    pageSearchClearBtn.hidden = !isSearchActive;
+  }
+
+  if (!isSearchActive) {
+    document.getElementById('pageTitle').textContent = 'All Movies';
+    document.getElementById('pageSubtitle').textContent = 'Jelajahi ribuan film dari seluruh dunia, dari yang lagi hits sampai yang klasik';
+    return;
+  }
+
+  document.getElementById('pageTitle').textContent = 'Search results';
   document.getElementById('pageSubtitle').textContent = `Menampilkan hasil untuk "${movieState.searchQuery}"`;
 
   document.getElementById('genreToggle').disabled = true;
   document.getElementById('yearFilter').disabled = true;
   document.getElementById('sortFilter').disabled = true;
 
-  // isi kotak search navbar dengan query yang sedang aktif
   const searchInput = document.querySelector('.navbar__search input');
   if (searchInput) searchInput.value = movieState.searchQuery;
 }
 
 function bindFilterEvents() {
+  const pageSearchInput = document.getElementById('pageSearchInput');
+  const pageSearchClearBtn = document.getElementById('pageSearchClearBtn');
+
+  if (pageSearchInput) {
+    let searchTimer = null;
+    pageSearchInput.addEventListener('input', () => {
+      const nextQuery = pageSearchInput.value.trim();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        movieState.searchQuery = nextQuery;
+        movieState.page = 1;
+        syncMovieQueryState();
+        setupSearchMode();
+        loadMovies({ reset: true });
+      }, 300);
+    });
+  }
+
+  if (pageSearchClearBtn) {
+    pageSearchClearBtn.addEventListener('click', () => {
+      movieState.searchQuery = '';
+      if (pageSearchInput) pageSearchInput.value = '';
+      movieState.page = 1;
+      syncMovieQueryState();
+      setupSearchMode();
+      loadMovies({ reset: true });
+    });
+  }
+
   document.getElementById('yearFilter').addEventListener('change', (e) => {
     movieState.year = e.target.value;
     movieState.page = 1;
+    syncMovieQueryState();
     loadMovies({ reset: true });
   });
 
   document.getElementById('sortFilter').addEventListener('change', (e) => {
     movieState.sortBy = e.target.value;
     movieState.page = 1;
+    syncMovieQueryState();
     loadMovies({ reset: true });
   });
 }
@@ -161,6 +223,11 @@ async function loadMovies({ reset }) {
 
     document.getElementById('resultCount').textContent =
       data.total_results !== undefined ? `${data.total_results.toLocaleString('id-ID')} movies found` : '';
+
+    const pageSearchInput = document.getElementById('pageSearchInput');
+    if (pageSearchInput && movieState.searchQuery) {
+      pageSearchInput.value = movieState.searchQuery;
+    }
   } catch (error) {
     console.error('Gagal memuat film:', error);
     if (reset) {
