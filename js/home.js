@@ -3,7 +3,8 @@
    Logic khusus untuk index.html:
    1. Hero carousel dari film trending (5 film teratas)
    2. Section "Trending Movies"
-   3. Section "Popular Movies"
+   3. Section "Popular Movies" dan "Popular TV Shows"
+   4. Section "Upcoming Movies"
    ========================================================= */
 
 // state kecil untuk carousel hero
@@ -19,8 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTrendingRow(),
     loadTrendingTVRow(),
     loadPopularRow(),
+    loadPopularTVRow(),
     loadTopRatedRow(),
     loadNowPlayingRow(),
+    loadUpcomingRow(),
     loadGenreChips(),
   ]).finally(hidePageProgress);
 
@@ -230,7 +233,7 @@ async function loadPopularRow() {
 /**
  * Mengubah hasil TMDB (array film mentah) menjadi kartu-kartu di dalam container.
  */
-function renderMovieRow(container, movies) {
+function renderMovieRow(container, movies, showReleaseDate = false) {
   container.innerHTML = '';
 
   if (movies.length === 0) {
@@ -246,9 +249,50 @@ function renderMovieRow(container, movies) {
       posterPath: movie.poster_path,
       rating: movie.vote_average,
       year: formatYear(movie.release_date),
+      // row Upcoming lebih berguna kalau nampilin tanggal rilis lengkap, bukan tahun doang
+      metaText: showReleaseDate ? formatReleaseDate(movie.release_date) : undefined,
     });
     container.appendChild(card);
   });
+}
+
+/* =========================================================
+   POPULAR TV SHOWS ROW
+   ========================================================= */
+
+async function loadPopularTVRow() {
+  const row = document.getElementById('popularTVRow');
+  renderCardSkeletons(row, 7);
+
+  try {
+    const data = await fetchPopularTV(1);
+    renderTVRow(row, data.results || []);
+  } catch (error) {
+    console.error('Gagal memuat popular TV shows:', error);
+    row.innerHTML = `<p class="state-block__desc">Gagal memuat data. Coba muat ulang halaman.</p>`;
+  }
+}
+
+/* =========================================================
+   UPCOMING MOVIES ROW
+   ========================================================= */
+
+async function loadUpcomingRow() {
+  const row = document.getElementById('upcomingRow');
+  renderCardSkeletons(row, 7);
+
+  try {
+    const data = await fetchUpcomingMovies(1);
+    // TMDB gak selalu ngurutin berdasarkan tanggal rilis, jadi diurutkan sendiri
+    // dari yang paling dekat. Film tanpa tanggal ditaruh paling belakang.
+    const movies = (data.results || [])
+      .slice()
+      .sort((a, b) => (a.release_date || '9999').localeCompare(b.release_date || '9999'));
+    renderMovieRow(row, movies, true);
+  } catch (error) {
+    console.error('Gagal memuat upcoming movies:', error);
+    row.innerHTML = `<p class="state-block__desc">Gagal memuat data. Coba muat ulang halaman.</p>`;
+  }
 }
 
 /* =========================================================

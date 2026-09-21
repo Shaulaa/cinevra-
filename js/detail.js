@@ -52,6 +52,7 @@ async function loadDetail(id, type) {
 
     renderDetail(currentItem, details);
     renderSidebar(details, credits, type);
+    renderFacts(details, type);
     renderCast(credits);
     renderGallery(images, currentItem);
     renderCardRow('similarRow', similar.results || [], type, 'Tidak ada judul serupa.');
@@ -87,6 +88,7 @@ function normalizeDetail(data, type) {
     id: data.id,
     type,
     title: type === 'movie' ? data.title : data.name,
+    tagline: data.tagline || '',
     overview: data.overview,
     releaseDate: type === 'movie' ? data.release_date : data.first_air_date,
     runtime: type === 'movie' ? data.runtime : (data.episode_run_time && data.episode_run_time[0]),
@@ -132,6 +134,11 @@ function renderDetail(item) {
 
   // judul & meta
   document.getElementById('detailTitle').textContent = item.title;
+
+  // tagline gak selalu ada (banyak TV show dan film kecil yang kosong), jadi disembunyikan kalau kosong
+  const taglineEl = document.getElementById('detailTagline');
+  taglineEl.textContent = item.tagline;
+  taglineEl.style.display = item.tagline ? 'block' : 'none';
   document.getElementById('detailOverview').textContent = item.overview || 'Belum ada sinopsis.';
   document.getElementById('aboutText').textContent = item.overview || 'Belum ada sinopsis untuk judul ini.';
 
@@ -216,24 +223,62 @@ function renderSidebar(data, credits, type) {
     [directorLabel, directorNames],
     ['Writers', writerNames],
     ['Stars', starNames],
-  ].forEach(([label, value]) => {
-    if (!value) return;
+  ].forEach(([label, value]) => appendSidebarItem(sidebar, label, value));
+}
 
-    const item = document.createElement('div');
-    item.className = 'sidebar-card__item';
+/**
+ * Satu baris label + nilai di kartu sidebar. Nilai kosong dilewati.
+ * Nilainya bisa berasal dari TMDB, jadi dipasang lewat textContent.
+ */
+function appendSidebarItem(container, label, value) {
+  if (!value) return;
 
-    const labelEl = document.createElement('p');
-    labelEl.className = 'sidebar-card__label';
-    labelEl.textContent = label;
+  const item = document.createElement('div');
+  item.className = 'sidebar-card__item';
 
-    const valueEl = document.createElement('p');
-    valueEl.className = 'sidebar-card__value';
-    valueEl.textContent = value;
+  const labelEl = document.createElement('p');
+  labelEl.className = 'sidebar-card__label';
+  labelEl.textContent = label;
 
-    item.appendChild(labelEl);
-    item.appendChild(valueEl);
-    sidebar.appendChild(item);
-  });
+  const valueEl = document.createElement('p');
+  valueEl.className = 'sidebar-card__value';
+  valueEl.textContent = value;
+
+  item.appendChild(labelEl);
+  item.appendChild(valueEl);
+  container.appendChild(item);
+}
+
+/* =========================================================
+   INFO TAMBAHAN
+   TV show dapat status, jumlah season, jumlah episode, dan network.
+   Movie dapat budget dan revenue. Kartunya disembunyikan kalau
+   semua datanya kosong (TMDB ngirim 0 buat budget/revenue yang belum ada).
+   ========================================================= */
+
+function renderFacts(data, type) {
+  const card = document.getElementById('detailFacts');
+  card.innerHTML = '';
+
+  let facts = [];
+
+  if (type === 'tv') {
+    const networkNames = (data.networks || []).slice(0, 3).map((n) => n.name).join(', ');
+    facts = [
+      ['Status', data.status],
+      ['Seasons', data.number_of_seasons ? String(data.number_of_seasons) : ''],
+      ['Episodes', data.number_of_episodes ? String(data.number_of_episodes) : ''],
+      ['Network', networkNames],
+    ];
+  } else {
+    facts = [
+      ['Budget', formatMoney(data.budget)],
+      ['Revenue', formatMoney(data.revenue)],
+    ];
+  }
+
+  facts.forEach(([label, value]) => appendSidebarItem(card, label, value));
+  card.style.display = card.children.length > 0 ? 'block' : 'none';
 }
 
 /* =========================================================

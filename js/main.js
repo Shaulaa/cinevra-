@@ -506,6 +506,35 @@ function formatRuntime(minutes) {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
+/**
+ * Format angka dolar (budget, revenue) jadi ringkas, misal 165000000 jadi
+ * "$165M". TMDB ngirim 0 kalau datanya memang belum ada, jadi 0 dianggap
+ * kosong dan return string kosong, biar pemanggilnya tinggal cek falsy.
+ */
+function formatMoney(amount) {
+  if (!amount) return '';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  }).format(amount);
+}
+
+/**
+ * Format tanggal rilis TMDB ("2026-10-03") jadi "3 Okt 2026". Tanggalnya
+ * dipecah manual, bukan lewat new Date(string), supaya gak geser sehari
+ * gara-gara beda zona waktu.
+ */
+function formatReleaseDate(dateString) {
+  if (!dateString) return '';
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function formatGenres(genres = []) {
   return genres.map((g) => g.name).join(', ');
 }
@@ -586,6 +615,8 @@ function attachImageFallback(img) {
  * textContent / properti elemen (bukan innerHTML), supaya aman
  * dari XSS kalau ada karakter HTML nyelip di data TMDB/localStorage.
  * @param {Object} item - { id, type, title, posterPath, rating, year }
+ *   Opsional metaText buat ganti teks di bawah judul (misal tanggal rilis
+ *   lengkap di row Upcoming). Cuma buat tampilan, gak ikut disimpan ke watchlist.
  * @returns {HTMLElement}
  */
 function createMovieCard(item) {
@@ -633,7 +664,7 @@ function createMovieCard(item) {
 
   const meta = document.createElement('p');
   meta.className = 'movie-card__meta';
-  meta.textContent = item.year || '-';
+  meta.textContent = item.metaText || item.year || '-';
 
   card.appendChild(posterWrap);
   card.appendChild(title);
@@ -650,7 +681,8 @@ function createMovieCard(item) {
   // tombol watchlist di dalam card (tidak ikut trigger buka detail)
   watchBtn.addEventListener('click', (event) => {
     event.stopPropagation();
-    const nowActive = toggleWatchlist(item);
+    const { metaText, ...savedItem } = item;
+    const nowActive = toggleWatchlist(savedItem);
     watchBtn.classList.toggle('is-active', nowActive);
     playWatchBtnPop(watchBtn);
   });

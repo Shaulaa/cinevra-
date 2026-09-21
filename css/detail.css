@@ -96,6 +96,14 @@
   overflow-wrap: break-word;
 }
 
+.detail-info__tagline {
+  font-size: 15px;
+  font-style: italic;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  overflow-wrap: break-word;
+}
+
 .detail-info__meta {
   display: flex;
   flex-wrap: wrap;
@@ -161,6 +169,10 @@
 /* ---------- SIDEBAR (director, writer, cast utama) ---------- */
 .detail-sidebar {
   padding-top: 148px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
 }
 
 .sidebar-card {
@@ -579,6 +591,7 @@
   }
 
   .detail-info__title,
+  .detail-info__tagline,
   .detail-info__overview,
   .about-block__text {
     text-align: left;
