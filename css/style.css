@@ -57,6 +57,20 @@
   --transition: 200ms ease;
 }
 
+/* ---------- NOSCRIPT FALLBACK ----------
+   Cinevra murni client-side (semua data diambil lewat fetch di browser),
+   jadi tanpa JavaScript halamannya bakal kosong. Banner ini kasih tahu
+   user kenapa, daripada mereka lihat layar blank tanpa penjelasan.
+------------------------------------------------------------ */
+.noscript-banner {
+  padding: 14px 20px;
+  background: var(--accent-crimson);
+  color: #fff;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
 /* ---------- Reset ---------- */
 * {
   margin: 0;
@@ -1176,7 +1190,10 @@ img.img-fallback {
   left: 50%;
   bottom: 28px;
   transform: translate(-50%, 20px);
-  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px 12px 20px;
   background: var(--text-primary);
   color: var(--bg);
   border-radius: 999px;
@@ -1186,11 +1203,32 @@ img.img-fallback {
   pointer-events: none;
   transition: opacity var(--transition), transform var(--transition);
   z-index: 300;
+  max-width: calc(100vw - 32px);
 }
 
 .toast.is-visible {
   opacity: 1;
   transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.toast__text {
+  white-space: nowrap;
+}
+
+.toast__action {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--accent-gold-soft);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.toast__action:hover {
+  background: #000;
 }
 
 /* =========================================================

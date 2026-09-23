@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Cinevra - Temukan Film & TV Show Favoritmu</title>
+  <meta name="description" content="Cinevra adalah website untuk menemukan film dan serial TV dengan tampilan gelap bernuansa sinematik. Lihat trending, popular, sampai upcoming, lengkap rating dan trailer.">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Cinevra">
+  <meta property="og:title" content="Cinevra - Temukan Film & TV Show Favoritmu">
+  <meta property="og:description" content="Website untuk menemukan film dan serial TV dengan tampilan gelap bernuansa sinematik, lengkap rating dan trailer.">
+  <meta property="og:image" content="assets/images/image.png">
 
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
   <link rel="alternate icon" href="assets/images/favicon.ico">
@@ -13,6 +20,12 @@
   <link rel="stylesheet" href="css/home.css">
 </head>
 <body>
+
+  <noscript>
+    <div class="noscript-banner">
+      Cinevra butuh JavaScript buat menampilkan film dan TV show. Aktifkan JavaScript di browser kamu, lalu muat ulang halaman.
+    </div>
+  </noscript>
 
   <!-- ================= NAVBAR ================= -->
   <header class="navbar">
@@ -131,6 +144,7 @@
     <section class="section reveal" id="recentSection" style="display:none;">
       <div class="section__head">
         <h2 class="section__title">Recently Viewed</h2>
+        <button class="section__link section__link--btn" id="recentClearBtn" type="button">Clear</button>
       </div>
       <div class="card-row" id="recentRow"></div>
     </section>

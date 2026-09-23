@@ -4,6 +4,15 @@
    Komponen umum (navbar, tombol, movie-card) sudah ada di style.css.
    ========================================================= */
 
+/* tombol "Clear" di section Recently Viewed, pakai gaya .section__link
+   tapi elemennya <button>, jadi border/background bawaan browser di-reset */
+.section__link--btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+
 /* ---------- HERO SECTION ---------- */
 .hero {
   position: relative;

@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title id="pageTitleTag">Detail - Cinevra</title>
+  <meta name="description" content="Lihat sinopsis, pemeran, genre, dan trailer film atau TV show di Cinevra.">
+
+  <meta property="og:type" content="video.movie">
+  <meta property="og:site_name" content="Cinevra">
+  <meta property="og:title" content="Detail - Cinevra">
+  <meta property="og:description" content="Lihat sinopsis, pemeran, genre, dan trailer film atau TV show di Cinevra.">
+  <meta property="og:image" content="assets/images/image.png">
 
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
   <link rel="alternate icon" href="assets/images/favicon.ico">
@@ -13,6 +20,12 @@
   <link rel="stylesheet" href="css/detail.css">
 </head>
 <body>
+
+  <noscript>
+    <div class="noscript-banner">
+      Cinevra butuh JavaScript buat menampilkan film dan TV show. Aktifkan JavaScript di browser kamu, lalu muat ulang halaman.
+    </div>
+  </noscript>
 
   <!-- ================= NAVBAR ================= -->
   <header class="navbar">
@@ -134,7 +147,8 @@
       <!-- disembunyikan lewat JS kalau memang tidak ada data provider buat judul ini -->
       <div class="watch-providers reveal" id="whereToWatchSection" style="display:none;">
         <div class="watch-providers__head">
-          <h3 class="about-block__title">Where to Watch <span class="watch-providers__country" id="watchProvidersCountry"></span></h3>
+          <h3 class="about-block__title">Where to Watch</h3>
+          <select class="watch-providers__country-select" id="watchProvidersCountrySelect" aria-label="Pilih negara"></select>
         </div>
         <div class="watch-providers__groups" id="watchProvidersGroups"></div>
         <p class="watch-providers__attribution">Data ketersediaan streaming oleh JustWatch</p>
@@ -197,6 +211,24 @@
     <h2 class="state-block__title">Data tidak ditemukan</h2>
     <p class="state-block__desc">Film/TV Show ini tidak tersedia atau link yang kamu buka tidak valid.</p>
     <a href="index.html" class="btn btn--outline">Kembali ke Home</a>
+  </div>
+
+  <!-- ================= LIGHTBOX (Gallery) ================= -->
+  <!-- disembunyikan default, dibuka lewat JS pas salah satu gambar gallery diklik -->
+  <div class="lightbox" id="lightbox" style="display:none;" role="dialog" aria-modal="true" aria-label="Galeri gambar">
+    <button class="lightbox__close" id="lightboxClose" type="button" aria-label="Tutup galeri">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    <button class="lightbox__nav lightbox__nav--prev" id="lightboxPrev" type="button" aria-label="Gambar sebelumnya">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    <div class="lightbox__stage">
+      <img id="lightboxImage" alt="">
+    </div>
+    <button class="lightbox__nav lightbox__nav--next" id="lightboxNext" type="button" aria-label="Gambar berikutnya">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+    <div class="lightbox__counter" id="lightboxCounter"></div>
   </div>
 
   <footer class="site-footer">

@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>All Movies - Cinevra</title>
-  <meta name="description" content="Jelajahi ribuan film dari seluruh dunia di Cinevra. Saring berdasarkan genre, tahun, dan urutan, lengkap rating dan sinopsis.">
+  <title>Halaman Tidak Ditemukan - Cinevra</title>
+  <meta name="description" content="Halaman yang kamu cari tidak ditemukan di Cinevra.">
+  <meta name="robots" content="noindex">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Cinevra">
-  <meta property="og:title" content="All Movies - Cinevra">
-  <meta property="og:description" content="Jelajahi ribuan film dari seluruh dunia di Cinevra, dari yang lagi hits sampai yang klasik.">
+  <meta property="og:title" content="Halaman Tidak Ditemukan - Cinevra">
+  <meta property="og:description" content="Halaman yang kamu cari tidak ditemukan di Cinevra.">
   <meta property="og:image" content="assets/images/image.png">
 
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
@@ -17,7 +18,6 @@
   <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
 
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/movies.css">
 </head>
 <body>
 
@@ -96,74 +96,17 @@
 
   <div class="navbar__backdrop" id="navBackdrop"></div>
 
-  <main class="container">
-
-    <!-- ================= LIST HERO ================= -->
-    <section class="list-hero" id="listHero">
-      <div class="list-hero__content">
-        <span class="list-hero__eyebrow">Movie Discovery</span>
-        <h1 class="list-hero__title" id="pageTitle">All Movies</h1>
-        <p class="list-hero__subtitle" id="pageSubtitle">Jelajahi ribuan film dari seluruh dunia, dari yang lagi hits sampai yang klasik</p>
-      </div>
-    </section>
-
-    <!-- ================= FILTER BAR ================= -->
-    <div class="filter-bar">
-      <label class="filter-bar__search" aria-label="Cari film">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="7"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input id="pageSearchInput" type="search" placeholder="Cari judul film..." value="">
-        <button id="pageSearchClearBtn" type="button" class="filter-bar__search-clear" aria-label="Hapus pencarian">Clear</button>
-      </label>
-
-      <div class="multi-select" id="genreMultiSelect">
-        <button type="button" class="multi-select__toggle" id="genreToggle">
-          <span id="genreToggleLabel">All Genres</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-        </button>
-        <div class="multi-select__panel" id="genrePanel"></div>
-      </div>
-
-      <select class="filter-select" id="yearFilter">
-        <option value="">All Years</option>
-      </select>
-
-      <select class="filter-select" id="sortFilter">
-        <option value="popularity.desc">Sort by: Popularity</option>
-        <option value="vote_average.desc">Sort by: Rating</option>
-        <option value="primary_release_date.desc">Sort by: Newest</option>
-        <option value="primary_release_date.asc">Sort by: Oldest</option>
-      </select>
-
-      <span class="filter-bar__count" id="resultCount"></span>
-    </div>
-
-    <!-- ================= GRID ================= -->
-    <section class="movies-grid-section">
-      <div class="card-grid" id="moviesGrid"></div>
-
-      <div class="state-block" id="emptyState" style="display:none;">
-        <svg class="state-block__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="11" cy="11" r="7"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <h2 class="state-block__title">Film tidak ditemukan</h2>
-        <p class="state-block__desc">Coba ubah kata kunci pencarian atau filter genre yang kamu pakai.</p>
-      </div>
-
-      <div class="load-more-wrap">
-        <button class="btn btn--outline" id="loadMoreBtn" type="button">Load More</button>
-        <label class="infinite-scroll-toggle">
-          <input type="checkbox" id="infiniteScrollToggle">
-          <span class="infinite-scroll-toggle__track"><span class="infinite-scroll-toggle__thumb"></span></span>
-          <span class="infinite-scroll-toggle__label">Auto-load saat scroll</span>
-        </label>
-      </div>
-    </section>
-
-  </main>
+  <!-- ================= 404 STATE ================= -->
+  <div class="state-block container" id="notFoundState" style="min-height: 60vh; display: flex;">
+    <svg class="state-block__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="9.5" y1="9.5" x2="14.5" y2="14.5"></line>
+      <line x1="14.5" y1="9.5" x2="9.5" y2="14.5"></line>
+    </svg>
+    <h1 class="state-block__title">404, Halaman Tidak Ditemukan</h1>
+    <p class="state-block__desc">Halaman yang kamu cari sudah dipindah, dihapus, atau memang gak pernah ada. Coba cek lagi alamatnya, atau kembali ke Home.</p>
+    <a href="index.html" class="btn btn--primary">Kembali ke Home</a>
+  </div>
 
   <footer class="site-footer">
     <div class="container">
@@ -175,6 +118,5 @@
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>
   <script src="js/main.js"></script>
-  <script src="js/movies.js"></script>
 </body>
 </html>

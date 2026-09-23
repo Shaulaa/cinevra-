@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadContinueWatchlistRow(); // dari localStorage, gak perlu ditunggu progress bar
   loadRecentlyViewedRow();
+  bindRecentlyViewedClear();
 
   document.getElementById('heroPrev').addEventListener('click', () => moveHero(-1));
   document.getElementById('heroNext').addEventListener('click', () => moveHero(1));
@@ -408,11 +409,16 @@ function loadContinueWatchlistRow() {
 
 function loadRecentlyViewedRow() {
   const list = getRecentlyViewed();
-  if (list.length === 0) return; // biarkan section tetap disembunyikan
-
   const section = document.getElementById('recentSection');
+
+  if (list.length === 0) {
+    section.style.display = 'none'; // baru aja di-clear, atau memang belum pernah buka detail apapun
+    return;
+  }
+
   const row = document.getElementById('recentRow');
   section.style.display = 'block';
+  row.innerHTML = ''; // kosongkan dulu supaya gak dobel pas dirender ulang setelah Clear
 
   list.forEach((item) => {
     row.appendChild(
@@ -425,6 +431,22 @@ function loadRecentlyViewedRow() {
         year: item.year,
       })
     );
+  });
+}
+
+/**
+ * Tombol "Clear" di section Recently Viewed. Gak ada Undo di sini
+ * (beda dari Clear All di watchlist) karena datanya cuma catatan
+ * otomatis, bukan hasil pilihan sadar user seperti watchlist.
+ */
+function bindRecentlyViewedClear() {
+  const btn = document.getElementById('recentClearBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    clearRecentlyViewed();
+    loadRecentlyViewedRow();
+    showToast('Recently Viewed dikosongkan');
   });
 }
 

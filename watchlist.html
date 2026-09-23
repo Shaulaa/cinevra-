@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>My Watchlist - Cinevra</title>
+  <meta name="description" content="Kelola watchlist film dan TV show kamu di Cinevra, tandai yang sudah ditonton, dan simpan buat ditonton nanti.">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Cinevra">
+  <meta property="og:title" content="My Watchlist - Cinevra">
+  <meta property="og:description" content="Kelola watchlist film dan TV show kamu di Cinevra, tandai yang sudah ditonton, dan simpan buat ditonton nanti.">
+  <meta property="og:image" content="assets/images/image.png">
 
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
   <link rel="alternate icon" href="assets/images/favicon.ico">
@@ -13,6 +20,12 @@
   <link rel="stylesheet" href="css/watchlist.css">
 </head>
 <body>
+
+  <noscript>
+    <div class="noscript-banner">
+      Cinevra butuh JavaScript buat menampilkan film dan TV show. Aktifkan JavaScript di browser kamu, lalu muat ulang halaman.
+    </div>
+  </noscript>
 
   <!-- ================= NAVBAR ================= -->
   <header class="navbar">
@@ -101,6 +114,34 @@
       <button class="watchlist-tab" data-filter="tv" type="button">
         TV Shows <span class="watchlist-tab__count" id="countTV"></span>
       </button>
+    </div>
+
+    <!-- ================= CONTROLS: search, sort, status, clear all ================= -->
+    <div class="filter-bar watchlist-controls">
+      <label class="filter-bar__search" aria-label="Cari di watchlist">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input id="watchlistSearchInput" type="search" placeholder="Cari di watchlist...">
+        <button id="watchlistSearchClearBtn" type="button" class="filter-bar__search-clear" aria-label="Hapus pencarian" hidden>Clear</button>
+      </label>
+
+      <select class="filter-select" id="watchlistStatusFilter">
+        <option value="all">Status: Semua</option>
+        <option value="watched">Sudah Ditonton</option>
+        <option value="unwatched">Belum Ditonton</option>
+      </select>
+
+      <select class="filter-select" id="watchlistSortFilter">
+        <option value="added-desc">Sort: Baru Ditambahkan</option>
+        <option value="title-asc">Sort: Judul A-Z</option>
+        <option value="title-desc">Sort: Judul Z-A</option>
+        <option value="rating-desc">Sort: Rating Tertinggi</option>
+        <option value="year-desc">Sort: Tahun Terbaru</option>
+      </select>
+
+      <button class="btn btn--outline watchlist-controls__clear" id="watchlistClearAllBtn" type="button">Clear All</button>
     </div>
 
     <!-- ================= GRID ================= -->

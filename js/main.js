@@ -418,6 +418,54 @@ function toggleWatchlist(item) {
 }
 
 /**
+ * Status "sudah ditonton" untuk satu item watchlist. Disimpan sebagai
+ * field tambahan (watched: boolean) di object item yang sama, jadi
+ * gak butuh key localStorage terpisah.
+ */
+function isWatched(id, type) {
+  const item = getWatchlist().find((i) => i.id === id && i.type === type);
+  return Boolean(item && item.watched);
+}
+
+function setWatchedStatus(id, type, watched) {
+  const list = getWatchlist();
+  const item = list.find((i) => i.id === id && i.type === type);
+  if (!item) return;
+  item.watched = watched;
+  saveWatchlist(list);
+}
+
+function toggleWatchedStatus(id, type) {
+  const nowWatched = !isWatched(id, type);
+  setWatchedStatus(id, type, nowWatched);
+  return nowWatched;
+}
+
+/**
+ * Menghapus sekelompok item watchlist sekaligus (dipakai tombol "Clear All"
+ * di watchlist.html, biasanya buat item yang lagi kelihatan di tab/filter aktif).
+ * Item yang dihapus, ditambah SELURUH isi watchlist sebelum dihapus,
+ * dikembalikan supaya pemanggilnya bisa nawarin "Undo" lewat toast.
+ * @param {Array} itemsToRemove - array item watchlist yang mau dihapus
+ * @returns {Array} snapshot seluruh watchlist SEBELUM item-item itu dihapus
+ */
+function clearWatchlistItems(itemsToRemove) {
+  const snapshot = getWatchlist();
+  const removeKeys = new Set(itemsToRemove.map((i) => `${i.type}:${i.id}`));
+  const remaining = snapshot.filter((item) => !removeKeys.has(`${item.type}:${item.id}`));
+  saveWatchlist(remaining);
+  return snapshot;
+}
+
+/**
+ * Mengembalikan watchlist persis seperti snapshot yang diberikan.
+ * Dipakai buat tombol "Undo" setelah clearWatchlistItems().
+ */
+function restoreWatchlist(snapshot) {
+  saveWatchlist(snapshot);
+}
+
+/**
  * Mainin animasi "pop" (.is-pop) di tombol wishlist tiap kali di-toggle.
  * Class-nya dilepas dulu + dipaksa reflow, supaya animasi tetap jalan
  * meskipun tombol yang sama diklik berkali-kali secara beruntun.
@@ -460,13 +508,61 @@ function addRecentlyViewed(item) {
   localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(list));
 }
 
+/**
+ * Mengosongkan daftar "Recently Viewed" (dipakai tombol "Clear" di
+ * section itu). Gak ada undo di sini karena datanya cuma catatan
+ * otomatis, bukan sesuatu yang sengaja disusun user seperti watchlist.
+ */
+function clearRecentlyViewed() {
+  localStorage.removeItem(RECENTLY_VIEWED_KEY);
+}
+
+/* =========================================================
+   META TAGS (SEO / Open Graph)
+   index.html, movies.html, dst sudah punya tag description & og
+   statis di <head>. Fungsi ini dipakai detail.js & person.js buat
+   nimpa isinya sesuai judul yang lagi dibuka, karena kontennya baru
+   ketahuan setelah data TMDB selesai di-fetch.
+   ========================================================= */
+
+/**
+ * @param {Object} options - { description, title, image }
+ *   Semua opsional, cuma tag yang datanya dikasih yang ditimpa.
+ */
+function updateMetaTags({ description, title, image } = {}) {
+  if (description) {
+    const trimmed = description.length > 160 ? `${description.slice(0, 157).trim()}...` : description;
+    setMetaContent('meta[name="description"]', trimmed);
+    setMetaContent('meta[property="og:description"]', trimmed);
+  }
+  if (title) {
+    setMetaContent('meta[property="og:title"]', title);
+  }
+  if (image) {
+    setMetaContent('meta[property="og:image"]', image);
+  }
+}
+
+function setMetaContent(selector, content) {
+  const tag = document.querySelector(selector);
+  if (tag) tag.setAttribute('content', content);
+}
+
 /* =========================================================
    TOAST
    ========================================================= */
 
 let toastTimeout = null;
 
-function showToast(message) {
+/**
+ * Menampilkan toast notifikasi kecil di bawah layar.
+ * @param {string} message
+ * @param {Object} [options]
+ *   actionLabel - teks tombol aksi opsional (misal "Undo")
+ *   onAction    - dipanggil kalau tombol aksi diklik
+ *   duration    - berapa lama toast tampil sebelum hilang sendiri (ms)
+ */
+function showToast(message, options = {}) {
   let toast = document.querySelector('.toast');
 
   // buat elemen toast sekali saja, lalu dipakai ulang
@@ -476,13 +572,32 @@ function showToast(message) {
     document.body.appendChild(toast);
   }
 
-  toast.textContent = message;
+  toast.innerHTML = ''; // kosongkan dulu, siapa tahu toast sebelumnya masih ada tombol aksi
+
+  const text = document.createElement('span');
+  text.className = 'toast__text';
+  text.textContent = message;
+  toast.appendChild(text);
+
+  if (options.actionLabel && typeof options.onAction === 'function') {
+    const actionBtn = document.createElement('button');
+    actionBtn.type = 'button';
+    actionBtn.className = 'toast__action';
+    actionBtn.textContent = options.actionLabel;
+    actionBtn.addEventListener('click', () => {
+      clearTimeout(toastTimeout);
+      toast.classList.remove('is-visible');
+      options.onAction();
+    });
+    toast.appendChild(actionBtn);
+  }
+
   toast.classList.add('is-visible');
 
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => {
     toast.classList.remove('is-visible');
-  }, 2200);
+  }, options.duration || 2200);
 }
 
 /* =========================================================

@@ -59,6 +59,105 @@
   opacity: 0.8;
 }
 
+/* ---------- CONTROLS BAR (search, status, sort, clear all) ---------- */
+.watchlist-controls {
+  border-bottom: 1px solid var(--border-soft);
+  margin-top: -8px;
+}
+
+.watchlist-controls__clear {
+  margin-left: auto;
+  border-color: var(--accent-crimson);
+  color: var(--accent-crimson);
+}
+
+.watchlist-controls__clear:hover {
+  background: var(--accent-crimson);
+  color: #fff;
+}
+
+.watchlist-controls__clear:disabled {
+  opacity: 0.4;
+  border-color: var(--border);
+  color: var(--text-muted);
+  background: transparent;
+  cursor: not-allowed;
+}
+
+/* filter-bar & filter-select biasanya ada di movies.css, tapi watchlist.html
+   gak load file itu, jadi versi ringkasnya diulang di sini */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0 32px;
+}
+
+.filter-bar__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: min(100%, 260px);
+  padding: 10px 12px 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.filter-bar__search:focus-within {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 3px rgba(255, 191, 92, 0.12);
+}
+
+.filter-bar__search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  outline: none;
+}
+
+.filter-bar__search input::placeholder {
+  color: var(--text-muted);
+}
+
+.filter-bar__search-clear {
+  border: none;
+  background: transparent;
+  color: var(--accent-gold);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.filter-bar__search-clear[hidden] {
+  display: none;
+}
+
+.filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 10px 34px 10px 16px;
+  border-radius: 999px;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a8a6a3' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: border-color var(--transition);
+}
+
+.filter-select:hover,
+.filter-select:focus-visible {
+  border-color: var(--accent-gold);
+}
+
 /* ---------- GRID SECTION ---------- */
 .watchlist-grid-section {
   padding-bottom: 60px;
@@ -90,6 +189,64 @@
 .movie-card__remove-btn svg {
   width: 15px;
   height: 15px;
+}
+
+/* ---------- WATCHED TOGGLE (pojok kiri bawah poster) ---------- */
+.movie-card__watched-btn {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 13, 0.75);
+  color: var(--text-primary);
+  backdrop-filter: blur(6px);
+  transition: background var(--transition), color var(--transition);
+}
+
+.movie-card__watched-btn:hover {
+  background: var(--surface-hover);
+}
+
+.movie-card__watched-btn.is-active {
+  background: var(--accent-gold);
+  color: var(--bg);
+}
+
+.movie-card__watched-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* badge "Watched" di pojok kiri atas poster, cuma muncul kalau item.watched true */
+.movie-card__watched-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--accent-gold);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.movie-card__watched-badge svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* poster item yang sudah ditonton dibuat sedikit redup, biar gampang dibedain sekilas */
+.movie-card.is-watched .movie-card__poster-wrap img {
+  opacity: 0.55;
 }
 
 /* animasi kecil saat sebuah card dihapus dari watchlist */

@@ -9,6 +9,10 @@
 // ulang oleh tombol watchlist & trailer tanpa fetch lagi
 let currentItem = null;
 
+// daftar URL gambar gallery ukuran penuh & index yang lagi kebuka di lightbox
+let galleryImages = [];
+let lightboxIndex = 0;
+
 // state untuk panel Reviews (dipisah dari loadDetail supaya kalau
 // fetch review-nya gagal atau lambat, sisa halaman detail tetap tampil normal)
 const reviewState = {
@@ -30,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadDetail(id, type);
   bindTabs();
+  bindLightbox();
 });
 
 /* =========================================================
@@ -105,6 +110,11 @@ function normalizeDetail(data, type) {
 
 function renderDetail(item) {
   document.title = `${item.title} - Cinevra`;
+  updateMetaTags({
+    title: `${item.title} - Cinevra`,
+    description: item.overview || `Lihat detail, cast, dan trailer ${item.title} di Cinevra.`,
+    image: getImageUrl(item.backdropPath || item.posterPath, 'backdrop'),
+  });
 
   // backdrop
   const backdropUrl = getImageUrl(item.backdropPath, 'backdrop');
@@ -363,6 +373,7 @@ function renderGallery(images, item) {
     .slice(0, 20);
 
   if (combined.length === 0) {
+    galleryImages = [];
     const empty = document.createElement('p');
     empty.className = 'reviews-empty';
     empty.textContent = 'Belum ada gambar tambahan.';
@@ -370,14 +381,74 @@ function renderGallery(images, item) {
     return;
   }
 
-  combined.forEach((image) => {
+  // simpan versi ukuran penuh buat ditampilkan di lightbox, terpisah dari
+  // versi kecil (backdropSmall) yang dipakai buat thumbnail di gallery-row
+  galleryImages = combined.map((image) => getImageUrl(image.file_path, 'backdrop'));
+
+  combined.forEach((image, index) => {
     const img = document.createElement('img');
     img.src = getImageUrl(image.file_path, 'backdropSmall');
-    img.alt = 'Gallery image';
+    img.alt = `Gallery image ${index + 1}`;
     img.loading = 'lazy';
     attachImageFallback(img);
+    img.addEventListener('click', () => openLightbox(index));
     row.appendChild(img);
   });
+}
+
+/* =========================================================
+   LIGHTBOX (buka gambar Gallery satu per satu, ukuran penuh)
+   ========================================================= */
+
+function bindLightbox() {
+  const lightbox = document.getElementById('lightbox');
+  if (!lightbox) return;
+
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  document.getElementById('lightboxPrev').addEventListener('click', () => moveLightbox(-1));
+  document.getElementById('lightboxNext').addEventListener('click', () => moveLightbox(1));
+
+  // klik area gelap di luar gambar juga menutup lightbox
+  lightbox.addEventListener('click', (event) => {
+    if (event.target === lightbox) closeLightbox();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (lightbox.style.display === 'none') return;
+    if (event.key === 'Escape') closeLightbox();
+    if (event.key === 'ArrowLeft') moveLightbox(-1);
+    if (event.key === 'ArrowRight') moveLightbox(1);
+  });
+}
+
+function openLightbox(index) {
+  if (galleryImages.length === 0) return;
+  lightboxIndex = index;
+  renderLightboxImage();
+  document.getElementById('lightbox').style.display = 'flex';
+  document.body.style.overflow = 'hidden'; // cegah halaman di belakang ikut discroll
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function moveLightbox(direction) {
+  lightboxIndex = (lightboxIndex + direction + galleryImages.length) % galleryImages.length;
+  renderLightboxImage();
+}
+
+function renderLightboxImage() {
+  const img = document.getElementById('lightboxImage');
+  img.src = galleryImages[lightboxIndex];
+  img.alt = `Gallery image ${lightboxIndex + 1}`;
+  document.getElementById('lightboxCounter').textContent = `${lightboxIndex + 1} / ${galleryImages.length}`;
+
+  // tombol prev/next gak berguna kalau gambarnya cuma satu
+  const showNav = galleryImages.length > 1;
+  document.getElementById('lightboxPrev').style.display = showNav ? 'flex' : 'none';
+  document.getElementById('lightboxNext').style.display = showNav ? 'flex' : 'none';
 }
 
 /* =========================================================
@@ -621,6 +692,19 @@ async function loadWhereToWatch(id, type) {
 }
 
 /**
+ * Format nama negara dari kode ISO ('ID' -> 'Indonesia'). Pakai
+ * Intl.DisplayNames kalau browsernya support, kalau tidak fallback
+ * ke kode negaranya aja biar tetap jalan.
+ */
+function getCountryDisplayName(code) {
+  try {
+    return new Intl.DisplayNames(['id'], { type: 'region' }).of(code) || code;
+  } catch (error) {
+    return code;
+  }
+}
+
+/**
  * TMDB cuma ngasih satu link per negara (halaman watch di TMDB sendiri,
  * yang isinya nge-list smua provider terus baru diarahkan lagi ke
  * JustWatch). Gak ada API resminya buat deep link langsung ke halaman
@@ -662,32 +746,62 @@ function buildProviderWatchUrl(provider, title, fallbackLink) {
   return fallbackLink || null;
 }
 
+/**
+ * Section Where to Watch bisa nampilin data provider dari negara mana pun
+ * yang tersedia di response TMDB, bukan cuma negara default (ID/US), lewat
+ * dropdown pemilih negara. Fetch cuma sekali (loadWhereToWatch), ganti
+ * negara di dropdown cuma render ulang dari data yang sudah ada.
+ */
 function renderWhereToWatch(resultsByCountry) {
   const section = document.getElementById('whereToWatchSection');
-  const countryLabel = document.getElementById('watchProvidersCountry');
-  const groupsWrap = document.getElementById('watchProvidersGroups');
+  const countrySelect = document.getElementById('watchProvidersCountrySelect');
 
-  const countryCode = resultsByCountry['ID']
-    ? 'ID'
-    : resultsByCountry['US']
-      ? 'US'
-      : Object.keys(resultsByCountry)[0];
+  // cuma negara yang beneran punya minimal satu provider yang masuk dropdown,
+  // biar gak ada opsi kosong yang bikin bingung
+  const availableCountries = Object.keys(resultsByCountry).filter((code) =>
+    WATCH_PROVIDER_GROUPS.some((g) => (resultsByCountry[code][g.key] || []).length > 0)
+  );
 
-  const countryData = countryCode ? resultsByCountry[countryCode] : null;
-
-  const hasAnyProvider = countryData && WATCH_PROVIDER_GROUPS.some((g) => (countryData[g.key] || []).length > 0);
-
-  if (!hasAnyProvider) {
+  if (availableCountries.length === 0) {
     section.style.display = 'none';
     return;
   }
 
   section.style.display = 'block';
-  countryLabel.textContent = countryCode;
+
+  const defaultCountry = availableCountries.includes('ID')
+    ? 'ID'
+    : availableCountries.includes('US')
+      ? 'US'
+      : availableCountries.slice().sort()[0];
+
+  countrySelect.innerHTML = '';
+  availableCountries
+    .slice()
+    .sort((a, b) => getCountryDisplayName(a).localeCompare(getCountryDisplayName(b)))
+    .forEach((code) => {
+      const option = document.createElement('option');
+      option.value = code;
+      option.textContent = `${getCountryDisplayName(code)} (${code})`;
+      countrySelect.appendChild(option);
+    });
+  countrySelect.value = defaultCountry;
+
+  renderWatchProviderGroups(resultsByCountry[defaultCountry]);
+  countrySelect.onchange = () => renderWatchProviderGroups(resultsByCountry[countrySelect.value]);
+}
+
+/**
+ * Render grup provider (Streaming/Sewa/Beli/dst) buat SATU negara.
+ * Dipisah dari renderWhereToWatch supaya bisa dipanggil ulang tiap kali
+ * negara di dropdown diganti, tanpa perlu fetch atau isi ulang dropdown-nya.
+ */
+function renderWatchProviderGroups(countryData) {
+  const groupsWrap = document.getElementById('watchProvidersGroups');
   groupsWrap.innerHTML = '';
 
   WATCH_PROVIDER_GROUPS.forEach((group) => {
-    const providers = countryData[group.key] || [];
+    const providers = (countryData && countryData[group.key]) || [];
     if (providers.length === 0) return;
 
     const groupEl = document.createElement('div');

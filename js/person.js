@@ -40,6 +40,11 @@ async function loadPerson(id) {
 
 function renderPerson(person) {
   document.title = `${person.name} - Cinevra`;
+  updateMetaTags({
+    title: `${person.name} - Cinevra`,
+    description: person.biography || `Lihat profil dan filmography ${person.name} di Cinevra.`,
+    image: getImageUrl(person.profile_path, 'poster'),
+  });
 
   const photoUrl = getImageUrl(person.profile_path, 'poster');
   const photoWrap = document.getElementById('personPhoto');
