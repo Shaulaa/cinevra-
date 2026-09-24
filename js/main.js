@@ -741,21 +741,33 @@ function createMovieCard(item) {
   const posterWrap = document.createElement('div');
   posterWrap.className = 'movie-card__poster-wrap';
 
+  const detailUrl = `detail.html?id=${item.id}&type=${item.type}`;
+
+  // poster dibungkus <a> asli (bukan div + click listener) supaya card bisa
+  // difokus keyboard, kebaca screen reader sebagai link, dan bisa dibuka di
+  // tab baru lewat ctrl/cmd-klik atau klik tengah
+  const posterLink = document.createElement('a');
+  posterLink.className = 'movie-card__poster-link';
+  posterLink.href = detailUrl;
+  posterLink.setAttribute('aria-label', item.title);
+
   const poster = item.posterPath ? getImageUrl(item.posterPath, 'posterSmall') : null;
 
   if (poster) {
     const img = document.createElement('img');
     img.src = poster;
-    img.alt = `Poster ${item.title}`; // aman: .alt adalah properti, bukan HTML yang di-parse
+    img.alt = ''; // dekoratif, nama link-nya udah kebaca dari aria-label di posterLink
     img.loading = 'lazy';
     attachImageFallback(img);
-    posterWrap.appendChild(img);
+    posterLink.appendChild(img);
   } else {
     const noPoster = document.createElement('div');
     noPoster.className = 'movie-card__no-poster';
     noPoster.textContent = item.title;
-    posterWrap.appendChild(noPoster);
+    posterLink.appendChild(noPoster);
   }
+
+  posterWrap.appendChild(posterLink);
 
   const ratingBadge = document.createElement('span');
   ratingBadge.className = 'movie-card__rating';
@@ -773,27 +785,27 @@ function createMovieCard(item) {
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"/></svg>';
   posterWrap.appendChild(watchBtn);
 
+  // judul juga dibungkus <a> sendiri (bukan cuma poster), pola umum di
+  // card film/TV, biar tetap bisa diklik/di-tap walau posternya gagal load
+  const titleLink = document.createElement('a');
+  titleLink.className = 'movie-card__title-link';
+  titleLink.href = detailUrl;
+
   const title = document.createElement('h3');
   title.className = 'movie-card__title';
   title.textContent = item.title;
+  titleLink.appendChild(title);
 
   const meta = document.createElement('p');
   meta.className = 'movie-card__meta';
   meta.textContent = item.metaText || item.year || '-';
 
   card.appendChild(posterWrap);
-  card.appendChild(title);
+  card.appendChild(titleLink);
   card.appendChild(meta);
 
-  // klik poster/judul -> buka halaman detail
-  posterWrap.addEventListener('click', () => {
-    window.location.href = `detail.html?id=${item.id}&type=${item.type}`;
-  });
-  title.addEventListener('click', () => {
-    window.location.href = `detail.html?id=${item.id}&type=${item.type}`;
-  });
-
-  // tombol watchlist di dalam card (tidak ikut trigger buka detail)
+  // tombol watchlist di dalam card (sibling dari posterLink, bukan nested
+  // di dalamnya, jadi klik di sini gak ikut mentrigger navigasi <a>)
   watchBtn.addEventListener('click', (event) => {
     event.stopPropagation();
     const { metaText, ...savedItem } = item;

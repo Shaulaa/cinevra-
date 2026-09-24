@@ -209,21 +209,33 @@ function renderWatchlistCard(item) {
   const posterWrap = document.createElement('div');
   posterWrap.className = 'movie-card__poster-wrap';
 
+  const detailUrl = `detail.html?id=${item.id}&type=${item.type}`;
+
+  // poster dibungkus <a> asli (bukan div + click listener) supaya card bisa
+  // difokus keyboard, kebaca screen reader sebagai link, dan bisa dibuka di
+  // tab baru lewat ctrl/cmd-klik atau klik tengah
+  const posterLink = document.createElement('a');
+  posterLink.className = 'movie-card__poster-link';
+  posterLink.href = detailUrl;
+  posterLink.setAttribute('aria-label', item.title);
+
   const poster = item.posterPath ? getImageUrl(item.posterPath, 'posterSmall') : null;
 
   if (poster) {
     const img = document.createElement('img');
     img.src = poster;
-    img.alt = `Poster ${item.title}`; // aman: properti .alt, bukan innerHTML
+    img.alt = ''; // dekoratif, nama link-nya udah kebaca dari aria-label di posterLink
     img.loading = 'lazy';
     attachImageFallback(img);
-    posterWrap.appendChild(img);
+    posterLink.appendChild(img);
   } else {
     const noPoster = document.createElement('div');
     noPoster.className = 'movie-card__no-poster';
     noPoster.textContent = item.title;
-    posterWrap.appendChild(noPoster);
+    posterLink.appendChild(noPoster);
   }
+
+  posterWrap.appendChild(posterLink);
 
   const ratingBadge = document.createElement('span');
   ratingBadge.className = 'movie-card__rating';
@@ -262,26 +274,23 @@ function renderWatchlistCard(item) {
   `;
   posterWrap.appendChild(removeBtn);
 
+  // judul juga dibungkus <a> sendiri, pola sama seperti createMovieCard() di main.js
+  const titleLink = document.createElement('a');
+  titleLink.className = 'movie-card__title-link';
+  titleLink.href = detailUrl;
+
   const title = document.createElement('h3');
   title.className = 'movie-card__title';
   title.textContent = item.title;
+  titleLink.appendChild(title);
 
   const meta = document.createElement('p');
   meta.className = 'movie-card__meta';
   meta.textContent = item.year || '-';
 
   card.appendChild(posterWrap);
-  card.appendChild(title);
+  card.appendChild(titleLink);
   card.appendChild(meta);
-
-  // klik poster/judul -> buka halaman detail
-  posterWrap.addEventListener('click', (e) => {
-    if (e.target.closest('.movie-card__remove-btn') || e.target.closest('.movie-card__watched-btn')) return;
-    window.location.href = `detail.html?id=${item.id}&type=${item.type}`;
-  });
-  title.addEventListener('click', () => {
-    window.location.href = `detail.html?id=${item.id}&type=${item.type}`;
-  });
 
   // toggle status "sudah ditonton", render ulang biar badge & posisi (kalau lagi difilter status) ikut update
   watchedBtn.addEventListener('click', (e) => {
