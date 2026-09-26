@@ -147,13 +147,41 @@ function fetchUpcomingMovies(page = 1) {
  * Mengambil daftar film dengan filter genre, tahun & urutan (dipakai di movies.html).
  * @param {Object} options - { page, genreId, year, sortBy }
  */
+/**
+ * Format tanggal hari ini ke 'YYYY-MM-DD', format yang dipakai TMDB
+ * buat parameter filter tanggal (primary_release_date.lte, dst).
+ */
+function getTodayDateString() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Minimum jumlah vote biar sort "Rating" gak kejebak film/TV obscure
+ * yang cuma punya 1-2 vote tapi kebetulan nilainya sempurna (10/10),
+ * padahal itu jauh dari representatif.
+ */
+const MIN_VOTE_COUNT_FOR_RATING_SORT = 100;
+
 function fetchMoviesByFilter({ page = 1, genreId = '', year = '', sortBy = 'popularity.desc' } = {}) {
-  return tmdbFetch('/discover/movie', {
+  const params = {
     page,
     with_genres: genreId,
     primary_release_year: year,
     sort_by: sortBy,
-  });
+  };
+
+  if (sortBy.startsWith('vote_average')) {
+    params['vote_count.gte'] = MIN_VOTE_COUNT_FOR_RATING_SORT;
+  }
+
+  // TMDB /discover gak mikirin status rilis by default, jadi sort "Newest"
+  // (primary_release_date.desc) bisa nampilin film yang tanggal rilisnya
+  // masih di masa depan. Dibatasi maksimal hari ini biar cuma yang udah rilis.
+  if (sortBy.startsWith('primary_release_date')) {
+    params['primary_release_date.lte'] = getTodayDateString();
+  }
+
+  return tmdbFetch('/discover/movie', params);
 }
 
 function fetchMovieDetails(id) {
@@ -226,12 +254,24 @@ function fetchTrendingTV(timeWindow = 'week') {
 }
 
 function fetchTVByFilter({ page = 1, genreId = '', year = '', sortBy = 'popularity.desc' } = {}) {
-  return tmdbFetch('/discover/tv', {
+  const params = {
     page,
     with_genres: genreId,
     first_air_date_year: year,
     sort_by: sortBy,
-  });
+  };
+
+  if (sortBy.startsWith('vote_average')) {
+    params['vote_count.gte'] = MIN_VOTE_COUNT_FOR_RATING_SORT;
+  }
+
+  // sama kayak fetchMoviesByFilter: sort "Newest" dibatasi maksimal hari ini
+  // biar gak nampilin serial yang belum tayang episode pertamanya
+  if (sortBy.startsWith('first_air_date')) {
+    params['first_air_date.lte'] = getTodayDateString();
+  }
+
+  return tmdbFetch('/discover/tv', params);
 }
 
 function fetchTVDetails(id) {

@@ -104,14 +104,14 @@
     </div>
 
     <!-- ================= TABS ================= -->
-    <div class="watchlist-tabs">
-      <button class="watchlist-tab is-active" data-filter="all" type="button">
+    <div class="watchlist-tabs" role="tablist" aria-label="Filter watchlist">
+      <button class="watchlist-tab is-active" data-filter="all" type="button" role="tab" aria-selected="true" tabindex="0">
         All <span class="watchlist-tab__count" id="countAll"></span>
       </button>
-      <button class="watchlist-tab" data-filter="movie" type="button">
+      <button class="watchlist-tab" data-filter="movie" type="button" role="tab" aria-selected="false" tabindex="-1">
         Movies <span class="watchlist-tab__count" id="countMovies"></span>
       </button>
-      <button class="watchlist-tab" data-filter="tv" type="button">
+      <button class="watchlist-tab" data-filter="tv" type="button" role="tab" aria-selected="false" tabindex="-1">
         TV Shows <span class="watchlist-tab__count" id="countTV"></span>
       </button>
     </div>

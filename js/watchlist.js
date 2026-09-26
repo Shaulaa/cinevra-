@@ -17,14 +17,32 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function bindTabs() {
-  document.querySelectorAll('.watchlist-tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      activeFilter = tab.dataset.filter;
+  const tabs = Array.from(document.querySelectorAll('.watchlist-tab'));
 
-      document.querySelectorAll('.watchlist-tab').forEach((t) => t.classList.remove('is-active'));
-      tab.classList.add('is-active');
+  function activateTab(tab) {
+    tabs.forEach((t) => {
+      t.classList.remove('is-active');
+      t.setAttribute('aria-selected', 'false');
+      t.tabIndex = -1;
+    });
+    tab.classList.add('is-active');
+    tab.setAttribute('aria-selected', 'true');
+    tab.tabIndex = 0;
 
-      renderWatchlistPage();
+    activeFilter = tab.dataset.filter;
+    renderWatchlistPage();
+  }
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => activateTab(tab));
+
+    // navigasi panah kiri/kanan antar tab, pola standar ARIA tablist
+    tab.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      const nextIndex = event.key === 'ArrowRight' ? (index + 1) % tabs.length : (index - 1 + tabs.length) % tabs.length;
+      activateTab(tabs[nextIndex]);
+      tabs[nextIndex].focus();
     });
   });
 }
@@ -257,6 +275,7 @@ function renderWatchlistCard(item) {
   watchedBtn.type = 'button';
   watchedBtn.className = `movie-card__watched-btn${item.watched ? ' is-active' : ''}`;
   watchedBtn.setAttribute('aria-label', item.watched ? 'Tandai belum ditonton' : 'Tandai sudah ditonton');
+  watchedBtn.setAttribute('aria-pressed', String(Boolean(item.watched)));
   watchedBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>';
   posterWrap.appendChild(watchedBtn);
 

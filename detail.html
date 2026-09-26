@@ -155,16 +155,16 @@
       </div>
 
       <!-- ================= TABS ================= -->
-      <div class="detail-tabs">
-        <button class="detail-tab is-active" data-tab="overview" type="button">Overview</button>
-        <button class="detail-tab" data-tab="cast" type="button">Cast &amp; Crew</button>
-        <button class="detail-tab" data-tab="reviews" type="button">Reviews</button>
-        <button class="detail-tab" data-tab="similar" type="button">Similar</button>
-        <button class="detail-tab" data-tab="recommended" type="button">Recommended</button>
+      <div class="detail-tabs" role="tablist" aria-label="Detail film/TV show">
+        <button class="detail-tab is-active" id="tabBtn-overview" data-tab="overview" type="button" role="tab" aria-selected="true" aria-controls="tabPanel-overview" tabindex="0">Overview</button>
+        <button class="detail-tab" id="tabBtn-cast" data-tab="cast" type="button" role="tab" aria-selected="false" aria-controls="tabPanel-cast" tabindex="-1">Cast &amp; Crew</button>
+        <button class="detail-tab" id="tabBtn-reviews" data-tab="reviews" type="button" role="tab" aria-selected="false" aria-controls="tabPanel-reviews" tabindex="-1">Reviews</button>
+        <button class="detail-tab" id="tabBtn-similar" data-tab="similar" type="button" role="tab" aria-selected="false" aria-controls="tabPanel-similar" tabindex="-1">Similar</button>
+        <button class="detail-tab" id="tabBtn-recommended" data-tab="recommended" type="button" role="tab" aria-selected="false" aria-controls="tabPanel-recommended" tabindex="-1">Recommended</button>
       </div>
 
       <!-- Panel: Overview -->
-      <div class="detail-tab-panel is-active reveal" data-panel="overview">
+      <div class="detail-tab-panel is-active reveal" id="tabPanel-overview" data-panel="overview" role="tabpanel" aria-labelledby="tabBtn-overview" tabindex="0">
         <div class="about-block">
           <h3 class="about-block__title">About</h3>
           <p class="about-block__text" id="aboutText"></p>
@@ -176,12 +176,12 @@
       </div>
 
       <!-- Panel: Cast & Crew -->
-      <div class="detail-tab-panel reveal" data-panel="cast">
+      <div class="detail-tab-panel reveal" id="tabPanel-cast" data-panel="cast" role="tabpanel" aria-labelledby="tabBtn-cast" tabindex="0">
         <div class="cast-grid" id="castGrid"></div>
       </div>
 
       <!-- Panel: Reviews (data asli dari TMDB, kalau tersedia untuk judul ini) -->
-      <div class="detail-tab-panel reveal" data-panel="reviews">
+      <div class="detail-tab-panel reveal" id="tabPanel-reviews" data-panel="reviews" role="tabpanel" aria-labelledby="tabBtn-reviews" tabindex="0">
         <div class="review-list" id="reviewsList"></div>
         <p class="reviews-empty" id="reviewsEmpty" style="display:none;">Belum ada review untuk judul ini.</p>
         <div class="load-more-wrap" id="reviewsLoadMoreWrap" style="display:none;">
@@ -190,12 +190,12 @@
       </div>
 
       <!-- Panel: Similar -->
-      <div class="detail-tab-panel reveal" data-panel="similar">
+      <div class="detail-tab-panel reveal" id="tabPanel-similar" data-panel="similar" role="tabpanel" aria-labelledby="tabBtn-similar" tabindex="0">
         <div class="card-row" id="similarRow"></div>
       </div>
 
       <!-- Panel: Recommended (beda dari Similar, dicocokkan lewat pola tontonan user lain) -->
-      <div class="detail-tab-panel reveal" data-panel="recommended">
+      <div class="detail-tab-panel reveal" id="tabPanel-recommended" data-panel="recommended" role="tabpanel" aria-labelledby="tabBtn-recommended" tabindex="0">
         <div class="card-row" id="recommendedRow"></div>
       </div>
     </div>

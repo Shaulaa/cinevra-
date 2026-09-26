@@ -569,6 +569,8 @@ function showToast(message, options = {}) {
   if (!toast) {
     toast = document.createElement('div');
     toast.className = 'toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
     document.body.appendChild(toast);
   }
 
@@ -779,8 +781,10 @@ function createMovieCard(item) {
 
   const watchBtn = document.createElement('button');
   watchBtn.type = 'button';
-  watchBtn.className = `movie-card__watch-btn${isInWatchlist(item.id, item.type) ? ' is-active' : ''}`;
+  const alreadySaved = isInWatchlist(item.id, item.type);
+  watchBtn.className = `movie-card__watch-btn${alreadySaved ? ' is-active' : ''}`;
   watchBtn.setAttribute('aria-label', 'Tambah ke Watchlist');
+  watchBtn.setAttribute('aria-pressed', String(alreadySaved));
   watchBtn.innerHTML =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"/></svg>';
   posterWrap.appendChild(watchBtn);
@@ -811,6 +815,7 @@ function createMovieCard(item) {
     const { metaText, ...savedItem } = item;
     const nowActive = toggleWatchlist(savedItem);
     watchBtn.classList.toggle('is-active', nowActive);
+    watchBtn.setAttribute('aria-pressed', String(nowActive));
     playWatchBtnPop(watchBtn);
   });
 
@@ -899,7 +904,8 @@ function initGenreMultiSelect({ fetchGenres, initialIds = [], onChange }) {
         panel.appendChild(label);
       });
 
-      const clearBtn = document.createElement('div');
+      const clearBtn = document.createElement('button');
+      clearBtn.type = 'button';
       clearBtn.className = 'multi-select__clear';
       clearBtn.id = 'genreClearBtn';
       clearBtn.textContent = 'Clear all';
@@ -933,15 +939,26 @@ function initGenreMultiSelect({ fetchGenres, initialIds = [], onChange }) {
 
   toggle.addEventListener('click', (event) => {
     event.stopPropagation();
-    panel.classList.toggle('is-open');
-    toggle.classList.toggle('is-open');
+    const isOpen = panel.classList.toggle('is-open');
+    toggle.classList.toggle('is-open', isOpen);
+    toggle.setAttribute('aria-expanded', String(isOpen));
   });
 
   document.addEventListener('click', (event) => {
     if (!toggle.contains(event.target) && !panel.contains(event.target)) {
       panel.classList.remove('is-open');
       toggle.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded', 'false');
     }
+  });
+
+  // Escape nutup dropdown-nya, balikin fokus ke tombol toggle
+  panel.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    panel.classList.remove('is-open');
+    toggle.classList.remove('is-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.focus();
   });
 }
 

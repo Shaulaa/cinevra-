@@ -44,8 +44,18 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadDetail(id, type) {
   showPageProgress();
   try {
-    const [details, credits, videos, similar, recommended, images] = await Promise.all([
-      type === 'movie' ? fetchMovieDetails(id) : fetchTVDetails(id),
+    // detail utama WAJIB berhasil dulu, karena semua section lain (sidebar,
+    // cast, gallery, dst) butuh data ini buat bisa dirender
+    const details = await (type === 'movie' ? fetchMovieDetails(id) : fetchTVDetails(id));
+    currentItem = normalizeDetail(details, type);
+    renderDetail(currentItem, details);
+
+    // sisanya (credits, videos, similar, recommended, images) masing-masing
+    // ngisi SECTION TERPISAH di halaman, jadi dipakai Promise.allSettled,
+    // bukan Promise.all: kalau salah satu gagal (misal endpoint images lagi
+    // bermasalah), section itu aja yang kosong, section lain & halaman
+    // detail-nya sendiri tetap tampil normal
+    const [creditsResult, videosResult, similarResult, recommendedResult, imagesResult] = await Promise.allSettled([
       type === 'movie' ? fetchMovieCredits(id) : fetchTVCredits(id),
       type === 'movie' ? fetchMovieVideos(id) : fetchTVVideos(id),
       type === 'movie' ? fetchSimilarMovies(id) : fetchSimilarTV(id),
@@ -53,9 +63,21 @@ async function loadDetail(id, type) {
       type === 'movie' ? fetchMovieImages(id) : fetchTVImages(id),
     ]);
 
-    currentItem = normalizeDetail(details, type);
+    [creditsResult, videosResult, similarResult, recommendedResult, imagesResult].forEach((result) => {
+      if (result.status === 'rejected') {
+        console.error('Salah satu bagian di halaman detail gagal dimuat:', result.reason);
+      }
+    });
 
-    renderDetail(currentItem, details);
+    // request yang gagal fallback ke object kosong; semua fungsi render di
+    // bawah ini sudah defensif (credits && credits.cast, dst) jadi tinggal
+    // nampilin state "kosong"-nya masing-masing, gak nge-throw
+    const credits = creditsResult.status === 'fulfilled' ? creditsResult.value : null;
+    const videos = videosResult.status === 'fulfilled' ? videosResult.value : null;
+    const similar = similarResult.status === 'fulfilled' ? similarResult.value : { results: [] };
+    const recommended = recommendedResult.status === 'fulfilled' ? recommendedResult.value : { results: [] };
+    const images = imagesResult.status === 'fulfilled' ? imagesResult.value : null;
+
     renderSidebar(details, credits, type);
     renderFacts(details, type);
     renderCast(credits);
@@ -193,6 +215,7 @@ function renderDetail(item) {
 
 function updateDetailWatchlistBtn(btn, item) {
   const inList = isInWatchlist(item.id, item.type);
+  btn.setAttribute('aria-pressed', String(inList));
   btn.innerHTML = inList
     ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"/></svg> In Watchlist`
     : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"/></svg> Add to Watchlist`;
@@ -865,13 +888,36 @@ function buildProviderLogo(provider, watchUrl) {
    ========================================================= */
 
 function bindTabs() {
-  document.querySelectorAll('.detail-tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.detail-tab').forEach((t) => t.classList.remove('is-active'));
-      document.querySelectorAll('.detail-tab-panel').forEach((p) => p.classList.remove('is-active'));
+  const tabs = Array.from(document.querySelectorAll('.detail-tab'));
 
-      tab.classList.add('is-active');
-      document.querySelector(`.detail-tab-panel[data-panel="${tab.dataset.tab}"]`).classList.add('is-active');
+  function activateTab(tab) {
+    tabs.forEach((t) => {
+      t.classList.remove('is-active');
+      t.setAttribute('aria-selected', 'false');
+      t.tabIndex = -1;
+    });
+    document.querySelectorAll('.detail-tab-panel').forEach((p) => p.classList.remove('is-active'));
+
+    tab.classList.add('is-active');
+    tab.setAttribute('aria-selected', 'true');
+    tab.tabIndex = 0;
+    document.getElementById(`tabPanel-${tab.dataset.tab}`).classList.add('is-active');
+  }
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => {
+      activateTab(tab);
+      tab.focus();
+    });
+
+    // navigasi panah kiri/kanan antar tab, pola standar ARIA tablist
+    // (fokus + aktivasi langsung pindah bareng, gak cuma fokus doang)
+    tab.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      const nextIndex = event.key === 'ArrowRight' ? (index + 1) % tabs.length : (index - 1 + tabs.length) % tabs.length;
+      activateTab(tabs[nextIndex]);
+      tabs[nextIndex].focus();
     });
   });
 }
