@@ -1,6 +1,6 @@
-# API key - jangan commit file ini ke repository publik
-# Gunakan js/api.example.js sebagai template, lalu buat js/api.js lokal dengan key asli
-# js/api.js
+# API key dan konfigurasi
+# js/config.js dibuat otomatis oleh scripts/generate-config.js saat build
+# jangan commit file ini ke repository publik
 js/config.js
 AGENT.md
 design.md

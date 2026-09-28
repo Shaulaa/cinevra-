@@ -159,10 +159,22 @@ function bindTVFilterEvents() {
   });
 }
 
+// request controller untuk cancel request yang keburu usang (filter/search)
+let currentTVController = null;
+
 async function loadTVShows({ reset }) {
   const grid = document.getElementById('tvGrid');
   const loadMoreBtn = document.getElementById('loadMoreBtn');
   const emptyState = document.getElementById('emptyState');
+
+  // cancel request lama kalau ada (biar respons lama gak nimpa yang baru)
+  if (currentTVController) {
+    currentTVController.abort();
+  }
+  currentTVController = new AbortController();
+
+  // simpan page sebelum fetch, agar kalau loadMore gagal page tetap di halaman yang sama
+  const currentPage = tvState.page;
 
   showPageProgress();
   emptyState.style.display = 'none';
@@ -171,6 +183,13 @@ async function loadTVShows({ reset }) {
 
   if (reset) {
     renderCardSkeletons(grid, 10);
+    // reset empty state text ke default pas reset
+    const defaultTitle = tvState.searchQuery ? 'Search results' : 'Popular TV Shows';
+    const defaultDesc = tvState.searchQuery
+      ? `Menampilkan hasil untuk "${tvState.searchQuery}"`
+      : 'Jelajahi serial TV dari seluruh dunia, dari drama sampai animasi';
+    document.getElementById('pageTitle').textContent = defaultTitle;
+    document.getElementById('pageSubtitle').textContent = defaultDesc;
   }
 
   try {
@@ -181,6 +200,7 @@ async function loadTVShows({ reset }) {
           genreId: tvState.genreIds.join('|'),
           year: tvState.year,
           sortBy: tvState.sortBy,
+          signal: currentTVController.signal,
         });
 
     tvState.totalPages = data.total_pages || 1;
@@ -217,16 +237,25 @@ async function loadTVShows({ reset }) {
     }
   } catch (error) {
     console.error('Gagal memuat TV shows:', error);
-    if (reset) {
-      grid.innerHTML = '';
-      emptyState.style.display = 'flex';
-      document.querySelector('.state-block__title').textContent = 'Gagal memuat data';
-      document.querySelector('.state-block__desc').textContent =
-        'Terjadi masalah saat mengambil data dari TMDB. Periksa API key atau koneksi internet kamu.';
+    // kalau ini bukan abort error (request sengaja dibatalkan), baru tampilkan error
+    if (error.name !== 'AbortError') {
+      if (reset) {
+        grid.innerHTML = '';
+        emptyState.style.display = 'flex';
+        document.querySelector('.state-block__title').textContent = 'Gagal memuat data';
+        document.querySelector('.state-block__desc').textContent =
+          'Terjadi masalah saat mengambil data dari TMDB. Periksa API key atau koneksi internet kamu.';
+      }
+    }
+    // kalau loadMore gagal, kembalikan page ke yang sebelumnya (jangan kelewat)
+    if (!reset && error.name !== 'AbortError') {
+      tvState.page = currentPage;
     }
   } finally {
     loadMoreBtn.textContent = 'Load More';
     loadMoreBtn.disabled = false;
     hidePageProgress();
+    // reset controller agar bisa dipakai lagi di load berikutnya
+    currentTVController = null;
   }
 }

@@ -133,6 +133,9 @@ function highlightActiveNavLink() {
   });
 }
 
+// request controller untuk cancel request yang keburu usang (search autocomplete)
+let currentSearchController = null;
+
 /**
  * Menghubungkan kotak search di navbar:
  * - ketik 2+ huruf -> muncul dropdown hasil pencarian live (debounced)
@@ -380,10 +383,14 @@ function getWatchlist() {
 }
 
 function saveWatchlist(list) {
-  localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(list));
-  // beritahu bagian lain di halaman yang sama (misalnya row "Continue Your
-  // Watchlist" di home.js) supaya bisa render ulang langsung tanpa refresh
-  window.dispatchEvent(new CustomEvent('watchlist:change', { detail: list }));
+  try {
+    localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(list));
+    // beritahu bagian lain di halaman yang sama (misalnya row "Continue Your
+    // Watchlist" di home.js) supaya bisa render ulang langsung tanpa refresh
+    window.dispatchEvent(new CustomEvent('watchlist:change', { detail: list }));
+  } catch (error) {
+    console.error('Gagal menyimpan watchlist:', error);
+  }
 }
 
 function isInWatchlist(id, type) {

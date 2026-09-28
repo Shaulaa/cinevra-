@@ -172,10 +172,22 @@ function bindFilterEvents() {
  * lalu merender ke grid.
  * @param {Object} options - { reset: boolean } reset=true artinya grid dikosongkan dulu
  */
+// request controller untuk cancel request yang keburu usang (filter/search)
+let currentMoviesController = null;
+
 async function loadMovies({ reset }) {
   const grid = document.getElementById('moviesGrid');
   const loadMoreBtn = document.getElementById('loadMoreBtn');
   const emptyState = document.getElementById('emptyState');
+
+  // cancel request lama kalau ada (biar respons lama gak nimpa yang baru)
+  if (currentMoviesController) {
+    currentMoviesController.abort();
+  }
+  currentMoviesController = new AbortController();
+
+  // simpan page sebelum fetch, agar kalau loadMore gagal page tetap di halaman yang sama
+  const currentPage = movieState.page;
 
   showPageProgress();
   emptyState.style.display = 'none';
@@ -184,6 +196,13 @@ async function loadMovies({ reset }) {
 
   if (reset) {
     renderCardSkeletons(grid, 10);
+    // reset empty state text ke default pas reset
+    const defaultTitle = movieState.searchQuery ? 'Search results' : 'All Movies';
+    const defaultDesc = movieState.searchQuery
+      ? `Menampilkan hasil untuk "${movieState.searchQuery}"`
+      : 'Jelajahi ribuan film dari seluruh dunia, dari yang lagi hits sampai yang klasik';
+    document.getElementById('pageTitle').textContent = defaultTitle;
+    document.getElementById('pageSubtitle').textContent = defaultDesc;
   }
 
   try {
@@ -194,6 +213,7 @@ async function loadMovies({ reset }) {
           genreId: movieState.genreIds.join('|'), // pipe = OR (film yang punya salah satu genre ini)
           year: movieState.year,
           sortBy: movieState.sortBy,
+          signal: currentMoviesController.signal,
         });
 
     movieState.totalPages = data.total_pages || 1;
@@ -230,16 +250,25 @@ async function loadMovies({ reset }) {
     }
   } catch (error) {
     console.error('Gagal memuat film:', error);
-    if (reset) {
-      grid.innerHTML = '';
-      emptyState.style.display = 'flex';
-      document.querySelector('.state-block__title').textContent = 'Gagal memuat data';
-      document.querySelector('.state-block__desc').textContent =
-        'Terjadi masalah saat mengambil data dari TMDB. Periksa API key atau koneksi internet kamu.';
+    // kalau ini bukan abort error (request sengaja dibatalkan), baru tampilkan error
+    if (error.name !== 'AbortError') {
+      if (reset) {
+        grid.innerHTML = '';
+        emptyState.style.display = 'flex';
+        document.querySelector('.state-block__title').textContent = 'Gagal memuat data';
+        document.querySelector('.state-block__desc').textContent =
+          'Terjadi masalah saat mengambil data dari TMDB. Periksa API key atau koneksi internet kamu.';
+      }
+    }
+    // kalau loadMore gagal, kembalikan page ke yang sebelumnya (jangan kelewat)
+    if (!reset && error.name !== 'AbortError') {
+      movieState.page = currentPage;
     }
   } finally {
     loadMoreBtn.textContent = 'Load More';
     loadMoreBtn.disabled = false;
     hidePageProgress();
+    // reset controller agar bisa dipakai lagi di load berikutnya
+    currentMoviesController = null;
   }
 }

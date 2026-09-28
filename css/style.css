@@ -244,7 +244,7 @@ input:focus-visible {
   height: 3px;
   width: 0%;
   z-index: 200;
-  background: linear-gradient(90deg, var(--accent-gold), var(--accent-gold-soft));
+  background: var(--accent-gold);
   box-shadow: 0 0 8px rgba(227, 179, 65, 0.6);
   opacity: 0;
   transition: width 300ms ease, opacity 200ms ease;
@@ -999,7 +999,7 @@ img.img-fallback {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary);
-  background: linear-gradient(160deg, var(--surface-hover), var(--surface));
+  background: var(--surface);
 }
 
 /* anchor yang membungkus poster/img, dibuat "stretched" nutupin seluruh
