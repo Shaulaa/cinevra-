@@ -1,0 +1,92 @@
+/* =========================================================
+  CINEVRA - search.css
+   Style KHUSUS untuk search.html.
+   Pinjam filter-bar, card-grid, dan state-block dari style.css / movies.css.
+   ========================================================= */
+
+.search-head {
+  padding: 40px 0 8px;
+}
+
+.search-head__title {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 600;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.search-head__subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.search-bar {
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+/* ---------- TABS ---------- */
+.search-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.search-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
+}
+
+.search-tab:hover {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.search-tab:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+.search-tab.is-active {
+  color: #14110a;
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+}
+
+.search-tab__count {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.search-tab__count:empty {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .search-head {
+    padding-top: 28px;
+  }
+
+  .search-tabs {
+    width: 100%;
+  }
+
+  .search-tab {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 9px 12px;
+  }
+}

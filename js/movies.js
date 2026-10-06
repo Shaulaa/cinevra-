@@ -2,7 +2,7 @@
   CINEVRA - js/movies.js
    Logic khusus untuk movies.html:
    - ambil daftar genre buat filter dropdown
-   - baca query "?search=" dari URL (dikirim dari navbar search)
+   - baca query "?search=" dan "?list=" dari URL (list dikirim dari See all di home)
    - filter genre + sort (pakai TMDB /discover/movie)
    - tombol "Load More" buat nambah halaman
    ========================================================= */
@@ -15,11 +15,43 @@ const movieState = {
   year: '',
   sortBy: 'popularity.desc',
   searchQuery: '',
+  list: '', // kategori dari tombol See all di home ('trending' atau 'now_playing')
 };
+
+// kategori yang pakai endpoint TMDB sendiri, jadi filter genre/tahun/sort gak berlaku
+const MOVIE_LISTS = {
+  trending: {
+    title: 'Trending Movies',
+    subtitle: 'Film yang lagi ramai ditonton minggu ini',
+  },
+  now_playing: {
+    title: 'Now Playing in Theaters',
+    subtitle: 'Film yang lagi tayang di bioskop sekarang',
+  },
+};
+
+/**
+ * Menentukan judul dan subjudul banner sesuai kondisi halaman
+ * (hasil pencarian, kategori dari See all, urutan rating, atau semua film).
+ */
+function getMovieHeading() {
+  if (movieState.searchQuery) {
+    return { title: 'Search results', subtitle: `Menampilkan hasil untuk "${movieState.searchQuery}"` };
+  }
+  if (MOVIE_LISTS[movieState.list]) return MOVIE_LISTS[movieState.list];
+  if (movieState.sortBy === 'vote_average.desc') {
+    return { title: 'Top Rated Movies', subtitle: 'Film dengan rating tertinggi, hanya yang sudah punya cukup banyak vote' };
+  }
+  return {
+    title: 'All Movies',
+    subtitle: 'Jelajahi ribuan film dari seluruh dunia, dari yang lagi hits sampai yang klasik',
+  };
+}
 
 function syncMovieQueryState() {
   const params = new URLSearchParams();
   if (movieState.searchQuery) params.set('search', movieState.searchQuery);
+  if (!movieState.searchQuery && movieState.list) params.set('list', movieState.list);
   if (movieState.genreIds.length) params.set('genre', movieState.genreIds.join(','));
   if (movieState.year) params.set('year', movieState.year);
   if (movieState.sortBy && movieState.sortBy !== 'popularity.desc') params.set('sort', movieState.sortBy);
@@ -36,6 +68,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (urlGenre) movieState.genreIds = urlGenre.split(',').filter(Boolean);
   movieState.year = params.get('year') || '';
   movieState.sortBy = params.get('sort') || 'popularity.desc';
+  const urlList = params.get('list');
+  if (MOVIE_LISTS[urlList]) movieState.list = urlList;
 
   setupSearchMode();
   initGenreMultiSelect({
@@ -49,6 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   });
   populateYearFilter(document.getElementById('yearFilter'));
+  // pilihan dari URL harus kelihatan di dropdown, bukan cuma masuk ke state
+  document.getElementById('yearFilter').value = movieState.year;
+  document.getElementById('sortFilter').value = movieState.sortBy;
   bindFilterEvents();
   loadMovies({ reset: true });
   loadListHeroBackdrop();
@@ -87,14 +124,15 @@ async function loadListHeroBackdrop() {
 }
 
 /**
- * Kalau halaman dibuka lewat pencarian (movies.html?search=...),
- * sesuaikan judul halaman & nonaktifkan filter genre/sort
- * (TMDB search endpoint tidak mendukung kombinasi filter genre).
+ * Menyesuaikan banner dan filter dengan mode halaman. Kalau lagi mode
+ * pencarian atau kategori (trending, now playing), filter genre/tahun/sort
+ * dinonaktifkan karena endpoint TMDB-nya tidak mendukung kombinasi itu.
  */
 function setupSearchMode() {
   const pageSearchInput = document.getElementById('pageSearchInput');
   const pageSearchClearBtn = document.getElementById('pageSearchClearBtn');
   const isSearchActive = Boolean(movieState.searchQuery);
+  const isFilterLocked = isSearchActive || Boolean(MOVIE_LISTS[movieState.list]);
 
   if (pageSearchInput) {
     pageSearchInput.value = movieState.searchQuery;
@@ -105,21 +143,16 @@ function setupSearchMode() {
     pageSearchClearBtn.hidden = !isSearchActive;
   }
 
-  if (!isSearchActive) {
-    document.getElementById('pageTitle').textContent = 'All Movies';
-    document.getElementById('pageSubtitle').textContent = 'Jelajahi ribuan film dari seluruh dunia, dari yang lagi hits sampai yang klasik';
-    return;
-  }
+  const heading = getMovieHeading();
+  document.getElementById('pageTitle').textContent = heading.title;
+  document.getElementById('pageSubtitle').textContent = heading.subtitle;
 
-  document.getElementById('pageTitle').textContent = 'Search results';
-  document.getElementById('pageSubtitle').textContent = `Menampilkan hasil untuk "${movieState.searchQuery}"`;
-
-  document.getElementById('genreToggle').disabled = true;
-  document.getElementById('yearFilter').disabled = true;
-  document.getElementById('sortFilter').disabled = true;
+  document.getElementById('genreToggle').disabled = isFilterLocked;
+  document.getElementById('yearFilter').disabled = isFilterLocked;
+  document.getElementById('sortFilter').disabled = isFilterLocked;
 
   const searchInput = document.querySelector('.navbar__search input');
-  if (searchInput) searchInput.value = movieState.searchQuery;
+  if (isSearchActive && searchInput) searchInput.value = movieState.searchQuery;
 }
 
 function bindFilterEvents() {
@@ -133,6 +166,7 @@ function bindFilterEvents() {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => {
         movieState.searchQuery = nextQuery;
+        movieState.list = '';
         movieState.page = 1;
         syncMovieQueryState();
         setupSearchMode();
@@ -144,6 +178,7 @@ function bindFilterEvents() {
   if (pageSearchClearBtn) {
     pageSearchClearBtn.addEventListener('click', () => {
       movieState.searchQuery = '';
+      movieState.list = '';
       if (pageSearchInput) pageSearchInput.value = '';
       movieState.page = 1;
       syncMovieQueryState();
@@ -196,25 +231,29 @@ async function loadMovies({ reset }) {
 
   if (reset) {
     renderCardSkeletons(grid, 10);
-    // reset empty state text ke default pas reset
-    const defaultTitle = movieState.searchQuery ? 'Search results' : 'All Movies';
-    const defaultDesc = movieState.searchQuery
-      ? `Menampilkan hasil untuk "${movieState.searchQuery}"`
-      : 'Jelajahi ribuan film dari seluruh dunia, dari yang lagi hits sampai yang klasik';
-    document.getElementById('pageTitle').textContent = defaultTitle;
-    document.getElementById('pageSubtitle').textContent = defaultDesc;
+    // judul banner ikut kondisi terbaru (search, kategori, atau urutan rating)
+    const heading = getMovieHeading();
+    document.getElementById('pageTitle').textContent = heading.title;
+    document.getElementById('pageSubtitle').textContent = heading.subtitle;
   }
 
   try {
-    const data = movieState.searchQuery
-      ? await searchMovies(movieState.searchQuery, movieState.page)
-      : await fetchMoviesByFilter({
-          page: movieState.page,
-          genreId: movieState.genreIds.join('|'), // pipe = OR (film yang punya salah satu genre ini)
-          year: movieState.year,
-          sortBy: movieState.sortBy,
-          signal: currentMoviesController.signal,
-        });
+    let data;
+    if (movieState.searchQuery) {
+      data = await searchMovies(movieState.searchQuery, movieState.page);
+    } else if (movieState.list === 'trending') {
+      data = await fetchTrendingMovies('week', movieState.page);
+    } else if (movieState.list === 'now_playing') {
+      data = await fetchNowPlayingMovies(movieState.page);
+    } else {
+      data = await fetchMoviesByFilter({
+        page: movieState.page,
+        genreId: movieState.genreIds.join('|'), // pipe = OR (film yang punya salah satu genre ini)
+        year: movieState.year,
+        sortBy: movieState.sortBy,
+        signal: currentMoviesController.signal,
+      });
+    }
 
     movieState.totalPages = data.total_pages || 1;
 

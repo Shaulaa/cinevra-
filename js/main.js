@@ -5,7 +5,7 @@
    - watchlist (simpan/hapus/cek via localStorage)
    - toast notifikasi kecil
    - fungsi format (tahun, runtime, rating)
-   - navbar search -> redirect ke movies.html?search=...
+   - navbar search -> redirect ke search.html?q=...
 
    File ini di-load DUA sebelum home.js/movies.js/dst,
    supaya fungsi-fungsi di bawah bisa langsung dipakai.
@@ -139,7 +139,7 @@ let currentSearchController = null;
 /**
  * Menghubungkan kotak search di navbar:
  * - ketik 2+ huruf -> muncul dropdown hasil pencarian live (debounced)
- * - tekan Enter / klik "Lihat semua hasil" -> pindah ke movies.html?search=...
+ * - tekan Enter / klik "Lihat semua hasil" -> pindah ke search.html?q=...
  * - klik salah satu hasil -> langsung ke halaman detail/person yang sesuai
  */
 function initNavbarSearch() {
@@ -191,7 +191,7 @@ function initNavbarSearch() {
     event.preventDefault();
     const query = input.value.trim();
     if (query) {
-      window.location.href = `movies.html?search=${encodeURIComponent(query)}`;
+      window.location.href = `search.html?q=${encodeURIComponent(query)}`;
     }
   });
 
@@ -251,7 +251,7 @@ function renderSearchDropdown(resultsBox, results, query) {
 
   const seeAll = document.createElement('a');
   seeAll.className = 'navbar__search-seeall';
-  seeAll.href = `movies.html?search=${encodeURIComponent(query)}`;
+  seeAll.href = `search.html?q=${encodeURIComponent(query)}`;
   seeAll.textContent = `Lihat semua hasil untuk "${query}"`;
   resultsBox.appendChild(seeAll);
 
@@ -826,6 +826,61 @@ function createMovieCard(item) {
     playWatchBtnPop(watchBtn);
   });
 
+  return card;
+}
+
+/**
+ * Membuat kartu orang (aktor/kru) dengan tampilan sejajar kartu film,
+ * dipakai di hasil pencarian. Nama diset lewat textContent, bukan innerHTML.
+ * @param {Object} person - { id, name, profilePath, department }
+ * @returns {HTMLElement}
+ */
+function createPersonCard(person) {
+  const card = document.createElement('article');
+  card.className = 'movie-card';
+
+  const posterWrap = document.createElement('div');
+  posterWrap.className = 'movie-card__poster-wrap';
+
+  const personUrl = `person.html?id=${person.id}`;
+
+  const posterLink = document.createElement('a');
+  posterLink.className = 'movie-card__poster-link';
+  posterLink.href = personUrl;
+  posterLink.setAttribute('aria-label', person.name);
+
+  const photo = person.profilePath ? getImageUrl(person.profilePath, 'profileCard') : null;
+  if (photo) {
+    const img = document.createElement('img');
+    img.src = photo;
+    img.alt = '';
+    img.loading = 'lazy';
+    attachImageFallback(img);
+    posterLink.appendChild(img);
+  } else {
+    const noPhoto = document.createElement('div');
+    noPhoto.className = 'movie-card__no-poster';
+    noPhoto.textContent = person.name;
+    posterLink.appendChild(noPhoto);
+  }
+  posterWrap.appendChild(posterLink);
+
+  const titleLink = document.createElement('a');
+  titleLink.className = 'movie-card__title-link';
+  titleLink.href = personUrl;
+
+  const title = document.createElement('h3');
+  title.className = 'movie-card__title';
+  title.textContent = person.name;
+  titleLink.appendChild(title);
+
+  const meta = document.createElement('p');
+  meta.className = 'movie-card__meta';
+  meta.textContent = person.department || 'Person';
+
+  card.appendChild(posterWrap);
+  card.appendChild(titleLink);
+  card.appendChild(meta);
   return card;
 }
 

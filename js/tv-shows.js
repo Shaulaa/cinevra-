@@ -14,11 +14,35 @@ const tvState = {
   year: '',
   sortBy: 'popularity.desc',
   searchQuery: '',
+  list: '', // kategori dari tombol See all di home ('trending')
 };
+
+// kategori yang pakai endpoint TMDB sendiri, jadi filter genre/tahun/sort gak berlaku
+const TV_LISTS = {
+  trending: {
+    title: 'Trending TV Shows',
+    subtitle: 'Serial TV yang lagi ramai ditonton minggu ini',
+  },
+};
+
+/**
+ * Menentukan judul dan subjudul banner sesuai kondisi halaman.
+ */
+function getTVHeading() {
+  if (tvState.searchQuery) {
+    return { title: 'Search results', subtitle: `Menampilkan hasil untuk "${tvState.searchQuery}"` };
+  }
+  if (TV_LISTS[tvState.list]) return TV_LISTS[tvState.list];
+  return {
+    title: 'Popular TV Shows',
+    subtitle: 'Jelajahi serial TV dari seluruh dunia, dari drama sampai animasi',
+  };
+}
 
 function syncTVQueryState() {
   const params = new URLSearchParams();
   if (tvState.searchQuery) params.set('search', tvState.searchQuery);
+  if (!tvState.searchQuery && tvState.list) params.set('list', tvState.list);
   if (tvState.genreIds.length) params.set('genre', tvState.genreIds.join(','));
   if (tvState.year) params.set('year', tvState.year);
   if (tvState.sortBy && tvState.sortBy !== 'popularity.desc') params.set('sort', tvState.sortBy);
@@ -35,6 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (urlGenre) tvState.genreIds = urlGenre.split(',').filter(Boolean);
   tvState.year = params.get('year') || '';
   tvState.sortBy = params.get('sort') || 'popularity.desc';
+  const urlList = params.get('list');
+  if (TV_LISTS[urlList]) tvState.list = urlList;
 
   setupTVSearchMode();
   initGenreMultiSelect({
@@ -48,6 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   });
   populateYearFilter(document.getElementById('yearFilter'));
+  // pilihan dari URL harus kelihatan di dropdown, bukan cuma masuk ke state
+  document.getElementById('yearFilter').value = tvState.year;
+  document.getElementById('sortFilter').value = tvState.sortBy;
   bindTVFilterEvents();
   loadTVShows({ reset: true });
   loadListHeroBackdrop();
@@ -88,6 +117,7 @@ function setupTVSearchMode() {
   const pageSearchInput = document.getElementById('pageSearchInput');
   const pageSearchClearBtn = document.getElementById('pageSearchClearBtn');
   const isSearchActive = Boolean(tvState.searchQuery);
+  const isFilterLocked = isSearchActive || Boolean(TV_LISTS[tvState.list]);
 
   if (pageSearchInput) {
     pageSearchInput.value = tvState.searchQuery;
@@ -97,21 +127,16 @@ function setupTVSearchMode() {
     pageSearchClearBtn.hidden = !isSearchActive;
   }
 
-  if (!isSearchActive) {
-    document.getElementById('pageTitle').textContent = 'Popular TV Shows';
-    document.getElementById('pageSubtitle').textContent = 'Jelajahi serial TV dari seluruh dunia, dari drama sampai animasi';
-    return;
-  }
+  const heading = getTVHeading();
+  document.getElementById('pageTitle').textContent = heading.title;
+  document.getElementById('pageSubtitle').textContent = heading.subtitle;
 
-  document.getElementById('pageTitle').textContent = 'Search results';
-  document.getElementById('pageSubtitle').textContent = `Menampilkan hasil untuk "${tvState.searchQuery}"`;
-
-  document.getElementById('genreToggle').disabled = true;
-  document.getElementById('yearFilter').disabled = true;
-  document.getElementById('sortFilter').disabled = true;
+  document.getElementById('genreToggle').disabled = isFilterLocked;
+  document.getElementById('yearFilter').disabled = isFilterLocked;
+  document.getElementById('sortFilter').disabled = isFilterLocked;
 
   const searchInput = document.querySelector('.navbar__search input');
-  if (searchInput) searchInput.value = tvState.searchQuery;
+  if (isSearchActive && searchInput) searchInput.value = tvState.searchQuery;
 }
 
 function bindTVFilterEvents() {
@@ -125,6 +150,7 @@ function bindTVFilterEvents() {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => {
         tvState.searchQuery = nextQuery;
+        tvState.list = '';
         tvState.page = 1;
         syncTVQueryState();
         setupTVSearchMode();
@@ -136,6 +162,7 @@ function bindTVFilterEvents() {
   if (pageSearchClearBtn) {
     pageSearchClearBtn.addEventListener('click', () => {
       tvState.searchQuery = '';
+      tvState.list = '';
       if (pageSearchInput) pageSearchInput.value = '';
       tvState.page = 1;
       syncTVQueryState();
@@ -183,25 +210,27 @@ async function loadTVShows({ reset }) {
 
   if (reset) {
     renderCardSkeletons(grid, 10);
-    // reset empty state text ke default pas reset
-    const defaultTitle = tvState.searchQuery ? 'Search results' : 'Popular TV Shows';
-    const defaultDesc = tvState.searchQuery
-      ? `Menampilkan hasil untuk "${tvState.searchQuery}"`
-      : 'Jelajahi serial TV dari seluruh dunia, dari drama sampai animasi';
-    document.getElementById('pageTitle').textContent = defaultTitle;
-    document.getElementById('pageSubtitle').textContent = defaultDesc;
+    // judul banner ikut kondisi terbaru (search atau kategori)
+    const heading = getTVHeading();
+    document.getElementById('pageTitle').textContent = heading.title;
+    document.getElementById('pageSubtitle').textContent = heading.subtitle;
   }
 
   try {
-    const data = tvState.searchQuery
-      ? await searchTV(tvState.searchQuery, tvState.page)
-      : await fetchTVByFilter({
-          page: tvState.page,
-          genreId: tvState.genreIds.join('|'),
-          year: tvState.year,
-          sortBy: tvState.sortBy,
-          signal: currentTVController.signal,
-        });
+    let data;
+    if (tvState.searchQuery) {
+      data = await searchTV(tvState.searchQuery, tvState.page);
+    } else if (tvState.list === 'trending') {
+      data = await fetchTrendingTV('week', tvState.page);
+    } else {
+      data = await fetchTVByFilter({
+        page: tvState.page,
+        genreId: tvState.genreIds.join('|'),
+        year: tvState.year,
+        sortBy: tvState.sortBy,
+        signal: currentTVController.signal,
+      });
+    }
 
     tvState.totalPages = data.total_pages || 1;
 

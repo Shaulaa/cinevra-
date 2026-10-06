@@ -45,6 +45,7 @@ Cinevra
 │   ├── style.css
 │   ├── home.css
 │   ├── movies.css
+│   ├── search.css
 │   ├── detail.css
 │   └── watchlist.css
 ├── js
@@ -53,11 +54,13 @@ Cinevra
 │   ├── home.js
 │   ├── movies.js
 │   ├── tv-shows.js
+│   ├── search.js
 │   ├── detail.js
 │   └── watchlist.js
 ├── index.html
 ├── movies.html
 ├── tv-shows.html
+├── search.html
 ├── detail.html
 └── watchlist.html
 ```

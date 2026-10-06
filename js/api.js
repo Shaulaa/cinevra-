@@ -30,6 +30,7 @@ const IMAGE_SIZES = {
   backdrop: 'w1280',
   backdropSmall: 'w780',
   profile: 'w185',
+  profileCard: 'w342',
   providerLogo: 'w92',
 };
 
@@ -123,8 +124,8 @@ function getImageUrl(path, sizeKey = 'poster') {
 // MOVIES
 // ---------------------------------------------------------
 
-function fetchTrendingMovies(timeWindow = 'week') {
-  return tmdbFetch(`/trending/movie/${timeWindow}`);
+function fetchTrendingMovies(timeWindow = 'week', page = 1) {
+  return tmdbFetch(`/trending/movie/${timeWindow}`, { page });
 }
 
 function fetchPopularMovies(page = 1) {
@@ -249,8 +250,8 @@ function fetchPopularTV(page = 1) {
   return tmdbFetch('/tv/popular', { page });
 }
 
-function fetchTrendingTV(timeWindow = 'week') {
-  return tmdbFetch(`/trending/tv/${timeWindow}`);
+function fetchTrendingTV(timeWindow = 'week', page = 1) {
+  return tmdbFetch(`/trending/tv/${timeWindow}`, { page });
 }
 
 function fetchTVByFilter({ page = 1, genreId = '', year = '', sortBy = 'popularity.desc' } = {}) {
@@ -320,6 +321,13 @@ function searchTV(query, page = 1) {
 
 function searchMulti(query, page = 1, signal) {
   return tmdbFetch('/search/multi', { query, page }, signal);
+}
+
+/**
+ * Pencarian khusus orang (aktor/kru), dipakai tab "Orang" di search.html.
+ */
+function searchPeople(query, page = 1) {
+  return tmdbFetch('/search/person', { query, page });
 }
 
 // ---------------------------------------------------------

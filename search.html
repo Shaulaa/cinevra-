@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Search - Cinevra</title>
+  <meta name="description" content="Cari film, serial TV, dan aktor di Cinevra dalam satu halaman hasil.">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Cinevra">
+  <meta property="og:title" content="Search - Cinevra">
+  <meta property="og:description" content="Cari film, serial TV, dan aktor di Cinevra dalam satu halaman hasil.">
+  <meta property="og:image" content="assets/images/image.png">
+
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+  <link rel="alternate icon" href="assets/images/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/movies.css">
+  <link rel="stylesheet" href="css/search.css">
+</head>
+<body>
+
+  <noscript>
+    <div class="noscript-banner">
+      Cinevra butuh JavaScript buat menampilkan film dan TV show. Aktifkan JavaScript di browser kamu, lalu muat ulang halaman.
+    </div>
+  </noscript>
+
+  <!-- ================= NAVBAR ================= -->
+  <header class="navbar">
+    <a href="index.html" class="navbar__logo"><img src="assets/images/favicon.svg" alt="" class="navbar__logo-icon"><span class="navbar__logo-text">Cine<span>vra</span></span></a>
+
+    <nav class="navbar__links" id="navLinks">
+      <a href="index.html" data-page="index.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5 12 3l9 6.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"></path></svg>
+        <span>Home</span>
+      </a>
+      <a href="movies.html" data-page="movies.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M7 3v18M17 3v18M3 8h4M17 8h4M3 16h4M17 16h4"></path></svg>
+        <span>Movies</span>
+      </a>
+      <a href="tv-shows.html" data-page="tv-shows.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M8 21h8M12 18v3"></path></svg>
+        <span>TV Shows</span>
+      </a>
+      <a href="watchlist.html" data-page="watchlist.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"></path></svg>
+        <span>Lists</span>
+      </a>
+    </nav>
+
+    <form class="navbar__search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" placeholder="Search movies, actors, genres..." aria-label="Search">
+      <button type="button" class="navbar__search-close" id="searchCloseBtn" aria-label="Tutup pencarian">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <div class="navbar__search-results" id="navSearchResults"></div>
+    </form>
+
+    <a href="watchlist.html" class="navbar__watchlist-link" aria-label="Watchlist">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"></path></svg>
+    </a>
+
+    <button class="navbar__surprise-btn" id="surpriseMeBtn" type="button" aria-label="Surprise Me, pilihkan film random">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+        <circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="15.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="8.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="15.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"></circle>
+      </svg>
+      <span class="navbar__surprise-btn-text">Surprise Me</span>
+    </button>
+
+    <div class="navbar__mobile-actions">
+      <button class="navbar__mobile-search-btn" id="mobileSearchBtn" type="button" aria-label="Cari">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+
+      <button class="navbar__toggle" id="navToggle" type="button" aria-label="Buka menu" aria-expanded="false">
+        <span class="navbar__toggle-bar"></span>
+        <span class="navbar__toggle-bar"></span>
+        <span class="navbar__toggle-bar"></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="navbar__backdrop" id="navBackdrop"></div>
+
+  <main class="container">
+
+    <!-- ================= PAGE HEAD ================= -->
+    <section class="search-head">
+      <span class="list-hero__eyebrow">Search</span>
+      <h1 class="search-head__title" id="searchTitle">Hasil pencarian</h1>
+      <p class="search-head__subtitle" id="searchSubtitle">Cari film, serial TV, dan aktor sekaligus</p>
+    </section>
+
+    <!-- ================= SEARCH BAR + TABS ================= -->
+    <div class="filter-bar search-bar">
+      <label class="filter-bar__search" aria-label="Cari">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input id="pageSearchInput" type="search" placeholder="Cari film, TV, atau orang..." value="">
+        <button id="pageSearchClearBtn" type="button" class="filter-bar__search-clear" aria-label="Hapus pencarian" hidden>Clear</button>
+      </label>
+
+      <div class="search-tabs" id="searchTabs" role="tablist" aria-label="Jenis hasil pencarian">
+        <button type="button" class="search-tab is-active" role="tab" id="tab-all" data-tab="all" aria-selected="true" aria-controls="searchPanel">
+          <span class="search-tab__label">Semua</span><span class="search-tab__count" data-count="all"></span>
+        </button>
+        <button type="button" class="search-tab" role="tab" id="tab-movie" data-tab="movie" aria-selected="false" aria-controls="searchPanel" tabindex="-1">
+          <span class="search-tab__label">Film</span><span class="search-tab__count" data-count="movie"></span>
+        </button>
+        <button type="button" class="search-tab" role="tab" id="tab-tv" data-tab="tv" aria-selected="false" aria-controls="searchPanel" tabindex="-1">
+          <span class="search-tab__label">TV</span><span class="search-tab__count" data-count="tv"></span>
+        </button>
+        <button type="button" class="search-tab" role="tab" id="tab-person" data-tab="person" aria-selected="false" aria-controls="searchPanel" tabindex="-1">
+          <span class="search-tab__label">Orang</span><span class="search-tab__count" data-count="person"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= HASIL ================= -->
+    <section class="movies-grid-section" id="searchPanel" role="tabpanel" aria-live="polite">
+      <div class="card-grid" id="searchGrid"></div>
+
+      <div class="state-block" id="emptyState" style="display:none;">
+        <svg class="state-block__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <h2 class="state-block__title" id="emptyTitle">Tidak ada hasil</h2>
+        <p class="state-block__desc" id="emptyDesc">Coba kata kunci lain.</p>
+      </div>
+
+      <div class="load-more-wrap">
+        <button class="btn btn--outline" id="loadMoreBtn" type="button" style="display:none;">Load More</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span class="site-footer__brand">Cinevra</span>
+      <span class="site-footer__note">Dibuat untuk tugas Pemrograman Web 1 &middot; Data film oleh TMDB</span>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/search.js"></script>
+</body>
+</html>
