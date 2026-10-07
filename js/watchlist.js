@@ -122,7 +122,7 @@ function renderWatchlistPage() {
   document.getElementById('countTV').textContent = list.filter((i) => i.type === 'tv').length;
 
   document.getElementById('watchlistSubtitle').textContent =
-    list.length > 0 ? `${list.length} judul tersimpan` : 'Film dan TV Show yang kamu simpan';
+    list.length > 0 ? `${list.length} titles saved` : 'Movies and TV shows you saved';
 
   let filtered = activeFilter === 'all' ? list : list.filter((i) => i.type === activeFilter);
 
@@ -171,19 +171,19 @@ function updateEmptyStateText(isTrulyEmpty) {
   const desc = document.getElementById('emptyDesc');
 
   if (isTrulyEmpty) {
-    title.textContent = 'Watchlist kamu masih kosong';
-    desc.textContent = 'Mulai jelajahi film dan TV show, lalu tekan ikon bookmark buat menyimpannya di sini.';
+    title.textContent = 'Your watchlist is empty';
+    desc.textContent = 'Start exploring movies and TV shows, then tap the bookmark icon to save them here.';
     return;
   }
 
   if (searchQuery) {
-    title.textContent = `Tidak ada hasil untuk "${searchQuery}"`;
-    desc.textContent = 'Coba kata kunci lain, atau hapus pencarian buat lihat semua judul.';
+    title.textContent = `No results for "${searchQuery}"`;
+    desc.textContent = 'Try another keyword, or clear the search to see all titles.';
     return;
   }
 
-  title.textContent = `Belum ada ${activeFilter === 'movie' ? 'movie' : activeFilter === 'tv' ? 'TV show' : 'judul'} di sini`;
-  desc.textContent = 'Coba pindah ke tab atau filter lain, atau tambah lebih banyak judul dari halaman Movies/TV Shows.';
+  title.textContent = `No ${activeFilter === 'movie' ? 'movies' : activeFilter === 'tv' ? 'TV shows' : 'titles'} here yet`;
+  desc.textContent = 'Try another tab or filter, or add more titles from the Movies or TV Shows pages.';
 }
 
 /**
@@ -203,13 +203,13 @@ function handleClearAll() {
   const snapshot = clearWatchlistItems(visible);
   renderWatchlistPage();
 
-  showToast(`${visible.length} judul dihapus dari Watchlist`, {
+  showToast(`${visible.length} titles removed from Watchlist`, {
     actionLabel: 'Undo',
     duration: 5000,
     onAction: () => {
       restoreWatchlist(snapshot);
       renderWatchlistPage();
-      showToast('Watchlist dikembalikan');
+      showToast('Watchlist restored');
     },
   });
 }
@@ -274,7 +274,7 @@ function renderWatchlistCard(item) {
   const watchedBtn = document.createElement('button');
   watchedBtn.type = 'button';
   watchedBtn.className = `movie-card__watched-btn${item.watched ? ' is-active' : ''}`;
-  watchedBtn.setAttribute('aria-label', item.watched ? 'Tandai belum ditonton' : 'Tandai sudah ditonton');
+  watchedBtn.setAttribute('aria-label', item.watched ? 'Mark as unwatched' : 'Mark as watched');
   watchedBtn.setAttribute('aria-pressed', String(Boolean(item.watched)));
   watchedBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>';
   posterWrap.appendChild(watchedBtn);
@@ -282,7 +282,7 @@ function renderWatchlistCard(item) {
   const removeBtn = document.createElement('button');
   removeBtn.type = 'button';
   removeBtn.className = 'movie-card__remove-btn';
-  removeBtn.setAttribute('aria-label', 'Hapus dari Watchlist');
+  removeBtn.setAttribute('aria-label', 'Remove from Watchlist');
   removeBtn.innerHTML = `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <polyline points="3 6 5 6 21 6"></polyline>
@@ -315,7 +315,7 @@ function renderWatchlistCard(item) {
   watchedBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const nowWatched = toggleWatchedStatus(item.id, item.type);
-    showToast(nowWatched ? 'Ditandai sudah ditonton' : 'Ditandai belum ditonton');
+    showToast(nowWatched ? 'Marked as watched' : 'Marked as unwatched');
     renderWatchlistPage();
   });
 
@@ -325,7 +325,7 @@ function renderWatchlistCard(item) {
     card.classList.add('is-removing');
     setTimeout(() => {
       removeFromWatchlist(item.id, item.type);
-      showToast('Dihapus dari Watchlist');
+      showToast('Removed from Watchlist');
       renderWatchlistPage(); // render ulang supaya counter & empty state ikut update
     }, 200);
   });

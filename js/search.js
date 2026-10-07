@@ -55,10 +55,10 @@ function applyQueryToPage() {
   if (clearBtn) clearBtn.hidden = !query;
   if (navInput) navInput.value = query;
 
-  document.getElementById('searchTitle').textContent = query ? `Hasil untuk "${query}"` : 'Hasil pencarian';
+  document.getElementById('searchTitle').textContent = query ? `Results for "${query}"` : 'Search results';
   document.getElementById('searchSubtitle').textContent = query
-    ? 'Film, serial TV, dan orang yang cocok dengan kata kunci kamu'
-    : 'Cari film, serial TV, dan aktor sekaligus';
+    ? 'Movies, TV shows, and people matching your search'
+    : 'Search movies, TV shows, and actors at once';
   document.title = query ? `"${query}" - Search - Cinevra` : 'Search - Cinevra';
 }
 
@@ -172,7 +172,7 @@ async function loadCounts() {
   results.forEach((result, index) => {
     if (result.status !== 'fulfilled') return;
     const el = document.querySelector(`.search-tab__count[data-count="${SEARCH_TABS[index]}"]`);
-    if (el) el.textContent = (result.value.total_results || 0).toLocaleString('id-ID');
+    if (el) el.textContent = (result.value.total_results || 0).toLocaleString('en-US');
   });
 }
 
@@ -238,7 +238,7 @@ async function loadResults({ reset }) {
   if (!query) {
     grid.innerHTML = '';
     loadMoreBtn.style.display = 'none';
-    showEmptyState('Mulai mencari', 'Ketik judul film, serial TV, atau nama aktor di kotak pencarian.');
+    showEmptyState('Start searching', 'Type a movie title, TV show, or actor name in the search box.');
     return;
   }
 
@@ -271,7 +271,7 @@ async function loadResults({ reset }) {
     });
 
     if (reset && rendered === 0) {
-      showEmptyState('Tidak ada hasil', `Tidak ada yang cocok dengan "${query}" di tab ini. Coba kata kunci lain atau pindah tab.`);
+      showEmptyState('No results', `Nothing matches "${query}" in this tab. Try another keyword or switch tabs.`);
       loadMoreBtn.style.display = 'none';
     } else {
       loadMoreBtn.style.display = searchState.page >= searchState.totalPages ? 'none' : 'inline-flex';
@@ -282,7 +282,7 @@ async function loadResults({ reset }) {
 
     if (reset) {
       grid.innerHTML = '';
-      showEmptyState('Gagal memuat data', 'Terjadi masalah saat mengambil data dari TMDB. Periksa API key atau koneksi internet kamu.');
+      showEmptyState('Failed to load data', 'Something went wrong while fetching data from TMDB. Check your API key or internet connection.');
     } else {
       // loadMore gagal, kembalikan page ke yang sebelumnya biar gak kelewat
       searchState.page = currentPage - 1;

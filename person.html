@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="pageTitleTag">Person - Cinevra</title>
-  <meta name="description" content="Lihat profil, biodata, dan daftar film & TV show yang pernah dibintangi di Cinevra.">
+  <meta name="description" content="See profiles, biographies, and filmographies on Cinevra.">
 
   <meta property="og:type" content="profile">
   <meta property="og:site_name" content="Cinevra">
   <meta property="og:title" content="Person - Cinevra">
-  <meta property="og:description" content="Lihat profil, biodata, dan daftar film & TV show yang pernah dibintangi di Cinevra.">
+  <meta property="og:description" content="See profiles, biographies, and filmographies on Cinevra.">
   <meta property="og:image" content="assets/images/image.png">
 
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
@@ -23,7 +23,7 @@
 
   <noscript>
     <div class="noscript-banner">
-      Cinevra butuh JavaScript buat menampilkan film dan TV show. Aktifkan JavaScript di browser kamu, lalu muat ulang halaman.
+      Cinevra needs JavaScript to show movies and TV shows. Enable JavaScript in your browser, then reload the page.
     </div>
   </noscript>
 
@@ -56,7 +56,7 @@
         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
       </svg>
       <input type="text" placeholder="Search movies, actors, genres..." aria-label="Search">
-      <button type="button" class="navbar__search-close" id="searchCloseBtn" aria-label="Tutup pencarian">
+      <button type="button" class="navbar__search-close" id="searchCloseBtn" aria-label="Close search">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
       <div class="navbar__search-results" id="navSearchResults"></div>
@@ -66,7 +66,7 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"></path></svg>
     </a>
 
-    <button class="navbar__surprise-btn" id="surpriseMeBtn" type="button" aria-label="Surprise Me, pilihkan film random">
+    <button class="navbar__surprise-btn" id="surpriseMeBtn" type="button" aria-label="Surprise Me, pick a random movie">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="3" width="18" height="18" rx="4"></rect>
         <circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"></circle>
@@ -79,14 +79,14 @@
     </button>
 
     <div class="navbar__mobile-actions">
-      <button class="navbar__mobile-search-btn" id="mobileSearchBtn" type="button" aria-label="Cari">
+      <button class="navbar__mobile-search-btn" id="mobileSearchBtn" type="button" aria-label="Search">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="7"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
       </button>
 
-      <button class="navbar__toggle" id="navToggle" type="button" aria-label="Buka menu" aria-expanded="false">
+      <button class="navbar__toggle" id="navToggle" type="button" aria-label="Open menu" aria-expanded="false">
         <span class="navbar__toggle-bar"></span>
         <span class="navbar__toggle-bar"></span>
         <span class="navbar__toggle-bar"></span>
@@ -127,7 +127,7 @@
         <div class="card-grid" id="filmographyGrid"></div>
 
         <div class="state-block" id="filmographyEmpty" style="display:none;">
-          <p class="state-block__desc">Belum ada data filmography untuk kategori ini.</p>
+          <p class="state-block__desc">No filmography data for this category yet.</p>
         </div>
       </section>
 
@@ -141,15 +141,15 @@
       <line x1="12" y1="8" x2="12" y2="12"></line>
       <line x1="12" y1="16" x2="12.01" y2="16"></line>
     </svg>
-    <h2 class="state-block__title">Data tidak ditemukan</h2>
-    <p class="state-block__desc">Profil ini tidak tersedia atau link yang kamu buka tidak valid.</p>
-    <a href="index.html" class="btn btn--outline">Kembali ke Home</a>
+    <h2 class="state-block__title">Data not found</h2>
+    <p class="state-block__desc">This profile is not available, or the link you opened is not valid.</p>
+    <a href="index.html" class="btn btn--outline">Back to Home</a>
   </div>
 
   <footer class="site-footer">
     <div class="container">
       <span class="site-footer__brand">Cinevra</span>
-      <span class="site-footer__note">Dibuat untuk tugas Pemrograman Web 1 &middot; Data film oleh TMDB</span>
+      <span class="site-footer__note">Built for a Web Programming 1 assignment &middot; Movie data by TMDB</span>
     </div>
   </footer>
 

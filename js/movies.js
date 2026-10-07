@@ -22,11 +22,11 @@ const movieState = {
 const MOVIE_LISTS = {
   trending: {
     title: 'Trending Movies',
-    subtitle: 'Film yang lagi ramai ditonton minggu ini',
+    subtitle: 'Movies everyone is watching this week',
   },
   now_playing: {
     title: 'Now Playing in Theaters',
-    subtitle: 'Film yang lagi tayang di bioskop sekarang',
+    subtitle: 'Movies currently showing in theaters',
   },
 };
 
@@ -36,15 +36,15 @@ const MOVIE_LISTS = {
  */
 function getMovieHeading() {
   if (movieState.searchQuery) {
-    return { title: 'Search results', subtitle: `Menampilkan hasil untuk "${movieState.searchQuery}"` };
+    return { title: 'Search results', subtitle: `Showing results for "${movieState.searchQuery}"` };
   }
   if (MOVIE_LISTS[movieState.list]) return MOVIE_LISTS[movieState.list];
   if (movieState.sortBy === 'vote_average.desc') {
-    return { title: 'Top Rated Movies', subtitle: 'Film dengan rating tertinggi, hanya yang sudah punya cukup banyak vote' };
+    return { title: 'Top Rated Movies', subtitle: 'The highest rated movies, limited to titles with enough votes' };
   }
   return {
     title: 'All Movies',
-    subtitle: 'Jelajahi ribuan film dari seluruh dunia, dari yang lagi hits sampai yang klasik',
+    subtitle: 'Explore thousands of movies from around the world, from current hits to timeless classics',
   };
 }
 
@@ -281,7 +281,7 @@ async function loadMovies({ reset }) {
     }
 
     document.getElementById('resultCount').textContent =
-      data.total_results !== undefined ? `${data.total_results.toLocaleString('id-ID')} movies found` : '';
+      data.total_results !== undefined ? `${data.total_results.toLocaleString('en-US')} movies found` : '';
 
     const pageSearchInput = document.getElementById('pageSearchInput');
     if (pageSearchInput && movieState.searchQuery) {
@@ -294,9 +294,9 @@ async function loadMovies({ reset }) {
       if (reset) {
         grid.innerHTML = '';
         emptyState.style.display = 'flex';
-        document.querySelector('.state-block__title').textContent = 'Gagal memuat data';
+        document.querySelector('.state-block__title').textContent = 'Failed to load data';
         document.querySelector('.state-block__desc').textContent =
-          'Terjadi masalah saat mengambil data dari TMDB. Periksa API key atau koneksi internet kamu.';
+          'Something went wrong while fetching data from TMDB. Check your API key or internet connection.';
       }
     }
     // kalau loadMore gagal, kembalikan page ke yang sebelumnya (jangan kelewat)

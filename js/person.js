@@ -42,7 +42,7 @@ function renderPerson(person) {
   document.title = `${person.name} - Cinevra`;
   updateMetaTags({
     title: `${person.name} - Cinevra`,
-    description: person.biography || `Lihat profil dan filmography ${person.name} di Cinevra.`,
+    description: person.biography || `See the profile and filmography of ${person.name} on Cinevra.`,
     image: getImageUrl(person.profile_path, 'poster'),
   });
 
@@ -97,7 +97,7 @@ function renderPerson(person) {
 
   const bioEl = document.getElementById('personBio');
   const toggleBtn = document.getElementById('bioToggleBtn');
-  bioEl.textContent = person.biography || 'Belum ada biografi untuk orang ini.';
+  bioEl.textContent = person.biography || 'No biography available for this person yet.';
 
   // tombol "Read more" cuma muncul kalau teksnya kepotong (lebih dari 6 baris)
   requestAnimationFrame(() => {
@@ -114,7 +114,7 @@ function renderPerson(person) {
 
 function formatPersonDate(dateString) {
   const date = new Date(dateString);
-  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 /**

@@ -176,7 +176,7 @@ function initNavbarSearch() {
     } catch (error) {
       if (error.name === 'AbortError') return; // request ini emang sengaja dibatalin, bukan error beneran
       console.error('Gagal mencari:', error);
-      resultsBox.innerHTML = `<p class="navbar__search-empty">Gagal memuat hasil pencarian.</p>`;
+      resultsBox.innerHTML = `<p class="navbar__search-empty">Failed to load search results.</p>`;
       resultsBox.classList.add('is-open');
     }
   }, 250);
@@ -239,7 +239,7 @@ function renderSearchDropdown(resultsBox, results, query) {
   if (items.length === 0) {
     const empty = document.createElement('p');
     empty.className = 'navbar__search-empty';
-    empty.textContent = `Tidak ada hasil untuk "${query}"`;
+    empty.textContent = `No results for "${query}"`;
     resultsBox.appendChild(empty);
     resultsBox.classList.add('is-open');
     return;
@@ -252,7 +252,7 @@ function renderSearchDropdown(resultsBox, results, query) {
   const seeAll = document.createElement('a');
   seeAll.className = 'navbar__search-seeall';
   seeAll.href = `search.html?q=${encodeURIComponent(query)}`;
-  seeAll.textContent = `Lihat semua hasil untuk "${query}"`;
+  seeAll.textContent = `See all results for "${query}"`;
   resultsBox.appendChild(seeAll);
 
   resultsBox.classList.add('is-open');
@@ -352,7 +352,7 @@ async function handleSurpriseMe(btn) {
     window.location.href = `detail.html?id=${pick.id}&type=movie`;
   } catch (error) {
     console.error('Gagal mengambil film random:', error);
-    showToast('Gagal mengambil film random, coba lagi');
+    showToast('Could not pick a random movie, try again');
     btn.classList.remove('is-loading');
     btn.disabled = false;
   }
@@ -416,11 +416,11 @@ function removeFromWatchlist(id, type) {
 function toggleWatchlist(item) {
   if (isInWatchlist(item.id, item.type)) {
     removeFromWatchlist(item.id, item.type);
-    showToast('Dihapus dari Watchlist');
+    showToast('Removed from Watchlist');
     return false;
   }
   addToWatchlist(item);
-  showToast('Ditambahkan ke Watchlist');
+  showToast('Added to Watchlist');
   return true;
 }
 
@@ -656,7 +656,7 @@ function formatReleaseDate(dateString) {
   const [year, month, day] = dateString.split('-').map(Number);
   const date = new Date(year, month - 1, day);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function formatGenres(genres = []) {
@@ -672,7 +672,7 @@ function formatReviewDate(dateString) {
   if (!dateString) return '';
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 /**
@@ -790,7 +790,7 @@ function createMovieCard(item) {
   watchBtn.type = 'button';
   const alreadySaved = isInWatchlist(item.id, item.type);
   watchBtn.className = `movie-card__watch-btn${alreadySaved ? ' is-active' : ''}`;
-  watchBtn.setAttribute('aria-label', 'Tambah ke Watchlist');
+  watchBtn.setAttribute('aria-label', 'Add to Watchlist');
   watchBtn.setAttribute('aria-pressed', String(alreadySaved));
   watchBtn.innerHTML =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"/></svg>';
@@ -996,7 +996,7 @@ function initGenreMultiSelect({ fetchGenres, initialIds = [], onChange }) {
     })
     .catch((error) => {
       console.error('Gagal memuat daftar genre:', error);
-      panel.innerHTML = `<p class="navbar__search-empty">Gagal memuat genre.</p>`;
+      panel.innerHTML = `<p class="navbar__search-empty">Failed to load genres.</p>`;
     });
 
   toggle.addEventListener('click', (event) => {
@@ -1079,7 +1079,7 @@ function initScrollTopButton() {
   const btn = document.createElement('button');
   btn.className = 'scroll-top-btn';
   btn.type = 'button';
-  btn.setAttribute('aria-label', 'Kembali ke atas');
+  btn.setAttribute('aria-label', 'Back to top');
   btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
   document.body.appendChild(btn);
 

@@ -82,8 +82,8 @@ async function loadDetail(id, type) {
     renderFacts(details, type);
     renderCast(credits);
     renderGallery(images, currentItem);
-    renderCardRow('similarRow', similar.results || [], type, 'Tidak ada judul serupa.');
-    renderCardRow('recommendedRow', recommended.results || [], type, 'Belum ada rekomendasi untuk judul ini.');
+    renderCardRow('similarRow', similar.results || [], type, 'No similar titles found.');
+    renderCardRow('recommendedRow', recommended.results || [], type, 'No recommendations for this title yet.');
     setupTrailerButton(videos);
     loadReviews(id, type);
     loadWhereToWatch(id, type);
@@ -134,7 +134,7 @@ function renderDetail(item) {
   document.title = `${item.title} - Cinevra`;
   updateMetaTags({
     title: `${item.title} - Cinevra`,
-    description: item.overview || `Lihat detail, cast, dan trailer ${item.title} di Cinevra.`,
+    description: item.overview || `See details, cast, and trailer for ${item.title} on Cinevra.`,
     image: getImageUrl(item.backdropPath || item.posterPath, 'backdrop'),
   });
 
@@ -171,8 +171,8 @@ function renderDetail(item) {
   const taglineEl = document.getElementById('detailTagline');
   taglineEl.textContent = item.tagline;
   taglineEl.style.display = item.tagline ? 'block' : 'none';
-  document.getElementById('detailOverview').textContent = item.overview || 'Belum ada sinopsis.';
-  document.getElementById('aboutText').textContent = item.overview || 'Belum ada sinopsis untuk judul ini.';
+  document.getElementById('detailOverview').textContent = item.overview || 'No synopsis available.';
+  document.getElementById('aboutText').textContent = item.overview || 'No synopsis available for this title.';
 
   // rating/tahun/runtime murni angka hasil format kita sendiri, aman lewat innerHTML
   document.getElementById('detailMeta').innerHTML = `
@@ -326,7 +326,7 @@ function renderCast(credits) {
   if (cast.length === 0) {
     const empty = document.createElement('p');
     empty.className = 'reviews-empty';
-    empty.textContent = 'Data cast tidak tersedia.';
+    empty.textContent = 'Cast data is not available.';
     grid.appendChild(empty);
     return;
   }
@@ -399,7 +399,7 @@ function renderGallery(images, item) {
     galleryImages = [];
     const empty = document.createElement('p');
     empty.className = 'reviews-empty';
-    empty.textContent = 'Belum ada gambar tambahan.';
+    empty.textContent = 'No additional images yet.';
     row.appendChild(empty);
     return;
   }
@@ -629,10 +629,10 @@ function buildReviewCard(review) {
     const toggleBtn = document.createElement('button');
     toggleBtn.type = 'button';
     toggleBtn.className = 'review-card__toggle';
-    toggleBtn.textContent = 'Baca selengkapnya';
+    toggleBtn.textContent = 'Read more';
     toggleBtn.addEventListener('click', () => {
       const stillClamped = content.classList.toggle('is-clamped');
-      toggleBtn.textContent = stillClamped ? 'Baca selengkapnya' : 'Sembunyikan';
+      toggleBtn.textContent = stillClamped ? 'Read more' : 'Sembunyikan';
     });
     card.appendChild(toggleBtn);
   }
@@ -695,10 +695,10 @@ function renderCardRow(containerId, items, type, emptyMessage) {
 
 const WATCH_PROVIDER_GROUPS = [
   { key: 'flatrate', label: 'Streaming' },
-  { key: 'free', label: 'Gratis' },
-  { key: 'ads', label: 'Gratis (Iklan)' },
-  { key: 'rent', label: 'Sewa' },
-  { key: 'buy', label: 'Beli' },
+  { key: 'free', label: 'Free' },
+  { key: 'ads', label: 'Free (with ads)' },
+  { key: 'rent', label: 'Rent' },
+  { key: 'buy', label: 'Buy' },
 ];
 
 async function loadWhereToWatch(id, type) {
@@ -721,7 +721,7 @@ async function loadWhereToWatch(id, type) {
  */
 function getCountryDisplayName(code) {
   try {
-    return new Intl.DisplayNames(['id'], { type: 'region' }).of(code) || code;
+    return new Intl.DisplayNames(['en'], { type: 'region' }).of(code) || code;
   } catch (error) {
     return code;
   }

@@ -91,7 +91,7 @@ function renderHero(index) {
 
   // teks
   document.getElementById('heroTitle').textContent = movie.title;
-  document.getElementById('heroOverview').textContent = movie.overview || 'Belum ada sinopsis untuk film ini.';
+  document.getElementById('heroOverview').textContent = movie.overview || 'No synopsis available for this movie.';
 
   document.getElementById('heroMeta').innerHTML = `
     <span class="hero__rating">
@@ -171,9 +171,9 @@ function restartHeroAutoplay() {
 function showHeroError() {
   const heroSection = document.getElementById('hero');
   heroSection.classList.remove('hero--loading');
-  document.getElementById('heroTitle').textContent = 'Gagal memuat data film';
+  document.getElementById('heroTitle').textContent = 'Failed to load movie data';
   document.getElementById('heroOverview').textContent =
-    'Terjadi masalah saat mengambil data dari TMDB. Periksa koneksi internet atau API key kamu, lalu muat ulang halaman.';
+    'Something went wrong while fetching data from TMDB. Check your internet connection or API key, then reload the page.';
   document.getElementById('heroMeta').innerHTML = '';
 }
 
@@ -189,11 +189,11 @@ async function playTrailer(movieId) {
     if (trailer) {
       window.open(`https://www.youtube.com/watch?v=${trailer.key}`, '_blank');
     } else {
-      showToast('Trailer tidak tersedia untuk film ini');
+      showToast('Trailer is not available for this movie');
     }
   } catch (error) {
     console.error('Gagal memuat trailer:', error);
-    showToast('Gagal memuat trailer');
+    showToast('Failed to load trailer');
   }
 }
 
@@ -210,7 +210,7 @@ async function loadTrendingRow() {
     renderMovieRow(row, data.results || []);
   } catch (error) {
     console.error('Gagal memuat trending movies:', error);
-    row.innerHTML = `<p class="state-block__desc">Gagal memuat data. Coba muat ulang halaman.</p>`;
+    row.innerHTML = `<p class="state-block__desc">Failed to load data. Try reloading the page.</p>`;
   }
 }
 
@@ -227,7 +227,7 @@ async function loadPopularRow() {
     renderMovieRow(row, data.results || []);
   } catch (error) {
     console.error('Gagal memuat popular movies:', error);
-    row.innerHTML = `<p class="state-block__desc">Gagal memuat data. Coba muat ulang halaman.</p>`;
+    row.innerHTML = `<p class="state-block__desc">Failed to load data. Try reloading the page.</p>`;
   }
 }
 
@@ -238,7 +238,7 @@ function renderMovieRow(container, movies, showReleaseDate = false) {
   container.innerHTML = '';
 
   if (movies.length === 0) {
-    container.innerHTML = `<p class="state-block__desc">Tidak ada film untuk ditampilkan.</p>`;
+    container.innerHTML = `<p class="state-block__desc">No movies to display.</p>`;
     return;
   }
 
@@ -270,7 +270,7 @@ async function loadPopularTVRow() {
     renderTVRow(row, data.results || []);
   } catch (error) {
     console.error('Gagal memuat popular TV shows:', error);
-    row.innerHTML = `<p class="state-block__desc">Gagal memuat data. Coba muat ulang halaman.</p>`;
+    row.innerHTML = `<p class="state-block__desc">Failed to load data. Try reloading the page.</p>`;
   }
 }
 
@@ -292,7 +292,7 @@ async function loadUpcomingRow() {
     renderMovieRow(row, movies, true);
   } catch (error) {
     console.error('Gagal memuat upcoming movies:', error);
-    row.innerHTML = `<p class="state-block__desc">Gagal memuat data. Coba muat ulang halaman.</p>`;
+    row.innerHTML = `<p class="state-block__desc">Failed to load data. Try reloading the page.</p>`;
   }
 }
 
@@ -309,7 +309,7 @@ async function loadTrendingTVRow() {
     renderTVRow(row, data.results || []);
   } catch (error) {
     console.error('Gagal memuat trending TV shows:', error);
-    row.innerHTML = `<p class="state-block__desc">Gagal memuat data. Coba muat ulang halaman.</p>`;
+    row.innerHTML = `<p class="state-block__desc">Failed to load data. Try reloading the page.</p>`;
   }
 }
 
@@ -317,7 +317,7 @@ function renderTVRow(container, shows) {
   container.innerHTML = '';
 
   if (shows.length === 0) {
-    container.innerHTML = `<p class="state-block__desc">Tidak ada TV show untuk ditampilkan.</p>`;
+    container.innerHTML = `<p class="state-block__desc">No TV shows to display.</p>`;
     return;
   }
 
@@ -347,7 +347,7 @@ async function loadTopRatedRow() {
     renderMovieRow(row, data.results || []);
   } catch (error) {
     console.error('Gagal memuat top rated movies:', error);
-    row.innerHTML = `<p class="state-block__desc">Gagal memuat data. Coba muat ulang halaman.</p>`;
+    row.innerHTML = `<p class="state-block__desc">Failed to load data. Try reloading the page.</p>`;
   }
 }
 
@@ -364,7 +364,7 @@ async function loadNowPlayingRow() {
     renderMovieRow(row, data.results || []);
   } catch (error) {
     console.error('Gagal memuat now playing movies:', error);
-    row.innerHTML = `<p class="state-block__desc">Gagal memuat data. Coba muat ulang halaman.</p>`;
+    row.innerHTML = `<p class="state-block__desc">Failed to load data. Try reloading the page.</p>`;
   }
 }
 
@@ -446,7 +446,7 @@ function bindRecentlyViewedClear() {
   btn.addEventListener('click', () => {
     clearRecentlyViewed();
     loadRecentlyViewedRow();
-    showToast('Recently Viewed dikosongkan');
+    showToast('Recently Viewed cleared');
   });
 }
 
@@ -462,7 +462,7 @@ async function loadGenreChips() {
     const genres = data.genres || [];
 
     if (genres.length === 0) {
-      wrap.innerHTML = `<p class="state-block__desc">Daftar genre tidak tersedia.</p>`;
+      wrap.innerHTML = `<p class="state-block__desc">Genre list is not available.</p>`;
       return;
     }
 
@@ -477,6 +477,6 @@ async function loadGenreChips() {
     });
   } catch (error) {
     console.error('Gagal memuat daftar genre:', error);
-    wrap.innerHTML = `<p class="state-block__desc">Gagal memuat daftar genre.</p>`;
+    wrap.innerHTML = `<p class="state-block__desc">Failed to load the genre list.</p>`;
   }
 }

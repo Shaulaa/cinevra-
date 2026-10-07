@@ -21,7 +21,7 @@ const tvState = {
 const TV_LISTS = {
   trending: {
     title: 'Trending TV Shows',
-    subtitle: 'Serial TV yang lagi ramai ditonton minggu ini',
+    subtitle: 'TV shows everyone is watching this week',
   },
 };
 
@@ -30,12 +30,12 @@ const TV_LISTS = {
  */
 function getTVHeading() {
   if (tvState.searchQuery) {
-    return { title: 'Search results', subtitle: `Menampilkan hasil untuk "${tvState.searchQuery}"` };
+    return { title: 'Search results', subtitle: `Showing results for "${tvState.searchQuery}"` };
   }
   if (TV_LISTS[tvState.list]) return TV_LISTS[tvState.list];
   return {
     title: 'Popular TV Shows',
-    subtitle: 'Jelajahi serial TV dari seluruh dunia, dari drama sampai animasi',
+    subtitle: 'Explore TV shows from around the world, from drama to animation',
   };
 }
 
@@ -258,7 +258,7 @@ async function loadTVShows({ reset }) {
     }
 
     document.getElementById('resultCount').textContent =
-      data.total_results !== undefined ? `${data.total_results.toLocaleString('id-ID')} TV shows found` : '';
+      data.total_results !== undefined ? `${data.total_results.toLocaleString('en-US')} TV shows found` : '';
 
     const pageSearchInput = document.getElementById('pageSearchInput');
     if (pageSearchInput && tvState.searchQuery) {
@@ -271,9 +271,9 @@ async function loadTVShows({ reset }) {
       if (reset) {
         grid.innerHTML = '';
         emptyState.style.display = 'flex';
-        document.querySelector('.state-block__title').textContent = 'Gagal memuat data';
+        document.querySelector('.state-block__title').textContent = 'Failed to load data';
         document.querySelector('.state-block__desc').textContent =
-          'Terjadi masalah saat mengambil data dari TMDB. Periksa API key atau koneksi internet kamu.';
+          'Something went wrong while fetching data from TMDB. Check your API key or internet connection.';
       }
     }
     // kalau loadMore gagal, kembalikan page ke yang sebelumnya (jangan kelewat)
