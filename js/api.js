@@ -163,12 +163,13 @@ function getTodayDateString() {
  */
 const MIN_VOTE_COUNT_FOR_RATING_SORT = 100;
 
-function fetchMoviesByFilter({ page = 1, genreId = '', year = '', sortBy = 'popularity.desc' } = {}) {
+function fetchMoviesByFilter({ page = 1, genreId = '', year = '', sortBy = 'popularity.desc', providerId = '', watchRegion = '', signal } = {}) {
   const params = {
     page,
     with_genres: genreId,
     primary_release_year: year,
     sort_by: sortBy,
+    ...streamingFilterParams(providerId, watchRegion),
   };
 
   if (sortBy.startsWith('vote_average')) {
@@ -182,7 +183,7 @@ function fetchMoviesByFilter({ page = 1, genreId = '', year = '', sortBy = 'popu
     params['primary_release_date.lte'] = getTodayDateString();
   }
 
-  return tmdbFetch('/discover/movie', params);
+  return tmdbFetch('/discover/movie', params, signal);
 }
 
 function fetchMovieDetails(id) {
@@ -254,12 +255,13 @@ function fetchTrendingTV(timeWindow = 'week', page = 1) {
   return tmdbFetch(`/trending/tv/${timeWindow}`, { page });
 }
 
-function fetchTVByFilter({ page = 1, genreId = '', year = '', sortBy = 'popularity.desc' } = {}) {
+function fetchTVByFilter({ page = 1, genreId = '', year = '', sortBy = 'popularity.desc', providerId = '', watchRegion = '', signal } = {}) {
   const params = {
     page,
     with_genres: genreId,
     first_air_date_year: year,
     sort_by: sortBy,
+    ...streamingFilterParams(providerId, watchRegion),
   };
 
   if (sortBy.startsWith('vote_average')) {
@@ -272,11 +274,31 @@ function fetchTVByFilter({ page = 1, genreId = '', year = '', sortBy = 'populari
     params['first_air_date.lte'] = getTodayDateString();
   }
 
-  return tmdbFetch('/discover/tv', params);
+  return tmdbFetch('/discover/tv', params, signal);
+}
+
+function streamingFilterParams(providerId, watchRegion) {
+  return watchRegion ? {
+    watch_region: watchRegion,
+    with_watch_providers: providerId,
+    with_watch_monetization_types: 'flatrate|free|ads',
+  } : {};
+}
+
+function fetchStreamingRegions() {
+  return tmdbFetch('/watch/providers/regions');
+}
+
+function fetchStreamingProviders(type, region) {
+  return tmdbFetch(`/watch/providers/${type}`, { watch_region: region });
 }
 
 function fetchTVDetails(id) {
   return tmdbFetch(`/tv/${id}`);
+}
+
+function fetchTVSeason(id, season) {
+  return tmdbFetch(`/tv/${id}/season/${season}`);
 }
 
 function fetchTVCredits(id) {
@@ -344,4 +366,37 @@ function fetchPersonDetails(id) {
  */
 function fetchPersonCombinedCredits(id) {
   return tmdbFetch(`/person/${id}/combined_credits`);
+}
+
+// ---------------------------------------------------------
+// SURPRISE ME (discover sesuai selera)
+// ---------------------------------------------------------
+
+/**
+ * Discover film atau TV dengan filter yang dipilih di dialog Surprise Me.
+ * @param {'movie'|'tv'} type
+ * @param {Object} options - { page, genreIds (array), maxRuntime, minRating }
+ *   genreIds digabung dengan "|" artinya cukup cocok salah satu genre.
+ */
+function fetchDiscoverForSurprise(type, { page = 1, genreIds = [], maxRuntime = '', minRating = '' } = {}) {
+  const params = {
+    page,
+    sort_by: 'popularity.desc',
+    with_genres: genreIds.join('|'),
+    'with_runtime.lte': maxRuntime,
+    // durasi 0 artinya belum diisi di TMDB, jangan ikut kepilih
+    'with_runtime.gte': maxRuntime ? 1 : '',
+    'vote_average.gte': minRating,
+    // batas vote biar hasilnya bukan judul obscure yang kebetulan nilainya tinggi
+    'vote_count.gte': 200,
+  };
+
+  // sama kayak sort "Newest", jangan sampai kepilih yang belum rilis
+  if (type === 'movie') {
+    params['primary_release_date.lte'] = getTodayDateString();
+  } else {
+    params['first_air_date.lte'] = getTodayDateString();
+  }
+
+  return tmdbFetch(`/discover/${type}`, params);
 }

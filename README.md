@@ -74,3 +74,12 @@ Data film dan serial TV disediakan oleh The Movie Database. Cinevra adalah proye
 ## Pembuat
 
 Dibuat oleh Rafif Shula Syandana untuk proyek pembelajaran Pemrograman Web.
+## Rating pribadi, episode, dan platform streaming
+
+Halaman detail bisa menyimpan rating pribadi dari 1 sampai 10, tanggal menonton, dan catatan singkat. Detail TV juga punya centang per episode, tombol untuk menandai satu season, dan progres keseluruhan season reguler. Episode spesial tidak dihitung. Data disimpan di localStorage browser tanpa akun dan akan hilang jika data browser dihapus.
+
+Katalog Movies dan TV Shows punya filter negara dan platform streaming. Negara awal pada katalog biasa adalah Indonesia. Pilih All countries untuk melihat katalog tanpa batasan streaming. Pilihan tersimpan di URL dan bisa digabung dengan genre, tahun, urutan, serta Load More. Hasil mencakup streaming berlangganan, gratis, dan dengan iklan. Memilih filter streaming dari kategori akan membuka katalog umum. Kosongkan pencarian judul untuk memakai filter streaming. Ketersediaan berasal dari TMDB dan JustWatch dan bisa berubah.
+
+Jalankan pemeriksaan dengan `node scripts/test-personal.js`, `node scripts/test-personal-ui.js`, `node scripts/test-streaming.js`, dan `node scripts/test-streaming-ui.js`.
+
+Parameter streaming mengikuti [dokumentasi Discover TMDB](https://developer.themoviedb.org/reference/discover-movie). Episode dimuat lewat [endpoint detail season](https://developer.themoviedb.org/reference/tv-season-details).

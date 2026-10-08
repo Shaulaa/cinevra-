@@ -66,7 +66,7 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"></path></svg>
     </a>
 
-    <button class="navbar__surprise-btn" id="surpriseMeBtn" type="button" aria-label="Surprise Me, pick a random movie">
+    <button class="navbar__surprise-btn" id="surpriseMeBtn" type="button" aria-label="Surprise Me, pick something to watch">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="3" width="18" height="18" rx="4"></rect>
         <circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"></circle>
@@ -99,9 +99,18 @@
   <main class="container">
 
     <div class="watchlist-head">
-      <h1 class="watchlist-head__title">My Watchlist</h1>
-      <p class="watchlist-head__subtitle" id="watchlistSubtitle">Movies and TV shows you saved</p>
+      <div class="watchlist-head__text">
+        <h1 class="watchlist-head__title" id="watchlistTitle">My Watchlist</h1>
+        <p class="watchlist-head__subtitle" id="watchlistSubtitle">Movies and TV shows you saved</p>
+      </div>
+      <div class="watchlist-head__actions" id="listActions" hidden>
+        <button class="btn btn--ghost" id="renameListBtn" type="button">Rename</button>
+        <button class="btn btn--ghost" id="deleteListBtn" type="button">Delete list</button>
+      </div>
     </div>
+
+    <!-- ================= LIST SWITCHER: Watchlist + daftar buatan sendiri ================= -->
+    <nav class="list-switcher" id="listSwitcher" aria-label="Your lists"></nav>
 
     <!-- ================= TABS ================= -->
     <div class="watchlist-tabs" role="tablist" aria-label="Filter watchlist">

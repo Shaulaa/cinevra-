@@ -15,6 +15,10 @@ const WATCHLIST_STORAGE_KEY = 'cinevra_watchlist';
 const RECENTLY_VIEWED_KEY = 'cinevra_recently_viewed';
 const RECENTLY_VIEWED_MAX = 15;
 const INFINITE_SCROLL_STORAGE_KEY = 'cinevra_infinite_scroll';
+const LISTS_STORAGE_KEY = 'cinevra_lists';
+const SURPRISE_PREFS_KEY = 'cinevra_surprise_prefs';
+const LIST_NAME_MAX_LENGTH = 40;
+const LISTS_MAX = 20;
 
 /* =========================================================
    NAVBAR
@@ -320,42 +324,531 @@ function buildSearchResultRow(item) {
 }
 
 /* =========================================================
-   SURPRISE ME
-   Tombol di navbar, ada di semua halaman. Ngambil satu film random
-   dari beberapa halaman pertama Popular Movies, terus langsung
-   diarahkan ke halaman detail-nya. Buat orang yang bingung mau
-   nonton apa.
+   DIALOG (dasar buat Surprise Me dan Add to List)
+   Pakai elemen <dialog> bawaan browser, jadi fokus otomatis
+   terkunci di dalam dialog dan tombol Escape langsung nutup.
    ========================================================= */
+
+/**
+ * Membuat <dialog> kosong yang sudah dipasang ke body. Klik di area
+ * gelap (backdrop) menutup dialog, dan elemennya dibuang dari DOM
+ * begitu ditutup supaya gak numpuk.
+ */
+function createDialog(extraClass = '') {
+  const dialog = document.createElement('dialog');
+  dialog.className = `dialog ${extraClass}`.trim();
+
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+  dialog.addEventListener('close', () => dialog.remove());
+
+  document.body.appendChild(dialog);
+  return dialog;
+}
+
+function buildDialogHeader(titleText, subtitleText) {
+  const header = document.createElement('div');
+  header.className = 'dialog__header';
+
+  const title = document.createElement('h2');
+  title.className = 'dialog__title';
+  title.textContent = titleText;
+  header.appendChild(title);
+
+  if (subtitleText) {
+    const subtitle = document.createElement('p');
+    subtitle.className = 'dialog__subtitle';
+    subtitle.textContent = subtitleText;
+    header.appendChild(subtitle);
+  }
+
+  return header;
+}
+
+/* =========================================================
+   SURPRISE ME
+   Tombol di navbar, ada di semua halaman. Kalau diklik, muncul dialog
+   buat milih selera (film/TV, genre, durasi maksimal, rating minimum,
+   dan apakah judul yang sudah ditonton dikecualikan). Hasilnya dipilih
+   acak dari TMDB Discover sesuai pilihan itu. Pilihan terakhir disimpan
+   di localStorage supaya gak perlu diisi ulang tiap kali.
+   ========================================================= */
+
+const SURPRISE_MAX_PAGE = 15; // acak dari 15 halaman teratas, sekitar 300 judul paling populer yang cocok
+const SURPRISE_MAX_ATTEMPTS = 3;
+
+const SURPRISE_TYPES = [
+  { value: 'both', label: 'Both' },
+  { value: 'movie', label: 'Movies' },
+  { value: 'tv', label: 'TV Shows' },
+];
+
+// value-nya durasi maksimal dalam menit, kosong artinya bebas
+const SURPRISE_DURATIONS = [
+  { value: '', label: 'Any length' },
+  { value: '90', label: 'Up to 90 min' },
+  { value: '120', label: 'Up to 2 hours' },
+  { value: '150', label: 'Up to 2.5 hours' },
+];
+
+const SURPRISE_RATINGS = [
+  { value: '', label: 'Any rating' },
+  { value: '6', label: '6 and up' },
+  { value: '7', label: '7 and up' },
+  { value: '8', label: '8 and up' },
+];
+
+// genre TV di TMDB sebagian digabung (misal "Action & Adventure"), jadi nama
+// genre film dipetakan dulu. Genre tanpa padanan (Horror, Romance, dst) memang
+// gak ada di TV, jadi dilewati.
+const SURPRISE_TV_GENRE_ALIASES = {
+  Action: 'Action & Adventure',
+  Adventure: 'Action & Adventure',
+  'Science Fiction': 'Sci-Fi & Fantasy',
+  Fantasy: 'Sci-Fi & Fantasy',
+  War: 'War & Politics',
+};
+
+const SURPRISE_DEFAULT_PREFS = { type: 'both', genres: [], maxRuntime: '', minRating: '', skipWatched: true };
+
+function loadSurprisePrefs() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SURPRISE_PREFS_KEY));
+    if (!saved || typeof saved !== 'object') return { ...SURPRISE_DEFAULT_PREFS };
+    const isOption = (list, value) => list.some((o) => o.value === value);
+    return {
+      type: isOption(SURPRISE_TYPES, saved.type) ? saved.type : 'both',
+      genres: Array.isArray(saved.genres) ? saved.genres.filter((g) => typeof g === 'string') : [],
+      maxRuntime: isOption(SURPRISE_DURATIONS, saved.maxRuntime) ? saved.maxRuntime : '',
+      minRating: isOption(SURPRISE_RATINGS, saved.minRating) ? saved.minRating : '',
+      skipWatched: saved.skipWatched !== false,
+    };
+  } catch (error) {
+    return { ...SURPRISE_DEFAULT_PREFS };
+  }
+}
+
+function saveSurprisePrefs(prefs) {
+  try {
+    localStorage.setItem(SURPRISE_PREFS_KEY, JSON.stringify(prefs));
+  } catch (error) {
+    // storage penuh atau diblokir, pilihan gak tersimpan tapi fitur tetap jalan
+  }
+}
+
+/**
+ * Ubah nama genre yang dipilih user jadi id genre TMDB buat satu tipe.
+ */
+function resolveSurpriseGenreIds(type, names, genreList) {
+  const ids = new Set();
+  names.forEach((name) => {
+    const target = type === 'tv' ? SURPRISE_TV_GENRE_ALIASES[name] || name : name;
+    const genre = genreList.find((g) => g.name === target);
+    if (genre) ids.add(genre.id);
+  });
+  return [...ids];
+}
+
+function randomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
+/**
+ * Pilih satu judul acak dari satu tipe (movie atau tv) sesuai filter.
+ * Return null kalau gak ada yang cocok.
+ */
+async function pickSurpriseFromType(type, genreIds, prefs, skipKeys) {
+  const filters = { genreIds, maxRuntime: prefs.maxRuntime, minRating: prefs.minRating };
+  const triedPages = new Set();
+  let page = randomInt(SURPRISE_MAX_PAGE) + 1;
+
+  for (let attempt = 0; attempt < SURPRISE_MAX_ATTEMPTS; attempt += 1) {
+    triedPages.add(page);
+    const data = await fetchDiscoverForSurprise(type, { ...filters, page });
+    if (!data.total_results) return null; // filter-nya terlalu ketat, gak ada yang cocok sama sekali
+
+    const candidates = (data.results || []).filter((r) => r.poster_path && !skipKeys.has(`${type}:${r.id}`));
+    if (candidates.length > 0) {
+      const r = candidates[randomInt(candidates.length)];
+      return {
+        id: r.id,
+        type,
+        title: type === 'movie' ? r.title : r.name,
+        posterPath: r.poster_path,
+        rating: r.vote_average,
+        year: formatYear(type === 'movie' ? r.release_date : r.first_air_date),
+        overview: r.overview || '',
+      };
+    }
+
+    // halaman ini kosong (atau semuanya sudah pernah muncul), coba halaman lain yang belum dicoba
+    const totalPages = Math.min(data.total_pages || 0, SURPRISE_MAX_PAGE);
+    const untried = [];
+    for (let p = 1; p <= totalPages; p += 1) if (!triedPages.has(p)) untried.push(p);
+    if (untried.length === 0) return null;
+    page = untried[randomInt(untried.length)];
+  }
+  return null;
+}
+
+/**
+ * Pilih judul acak sesuai selera. Kalau tipenya "Both", urutan film/TV
+ * diacak, dan kalau satu tipe kosong, tipe satunya dicoba.
+ */
+async function pickSurprise(prefs, genreData, seenKeys) {
+  const skipKeys = new Set(seenKeys);
+  if (prefs.skipWatched) {
+    getWatchlist().forEach((item) => {
+      if (item.watched) skipKeys.add(`${item.type}:${item.id}`);
+    });
+  }
+
+  const types = prefs.type === 'both' ? (Math.random() < 0.5 ? ['movie', 'tv'] : ['tv', 'movie']) : [prefs.type];
+
+  for (const type of types) {
+    let genreIds = [];
+    if (prefs.genres.length > 0) {
+      genreIds = resolveSurpriseGenreIds(type, prefs.genres, genreData[type]);
+      if (genreIds.length === 0) continue; // genre yang dipilih gak ada di tipe ini
+    }
+    const pick = await pickSurpriseFromType(type, genreIds, prefs, skipKeys);
+    if (pick) return pick;
+  }
+  return null;
+}
 
 function initSurpriseMeButton() {
   const btn = document.getElementById('surpriseMeBtn');
   if (!btn) return;
-  btn.addEventListener('click', () => handleSurpriseMe(btn));
+  btn.addEventListener('click', () => openSurpriseDialog());
 }
 
-async function handleSurpriseMe(btn) {
-  if (btn.classList.contains('is-loading')) return; // cegah klik dobel pas lagi fetch
+function buildSurpriseSelect(options, value, label, onChange) {
+  const select = document.createElement('select');
+  select.className = 'dialog__input';
+  select.setAttribute('aria-label', label);
+  options.forEach((opt) => {
+    const option = document.createElement('option');
+    option.value = opt.value;
+    option.textContent = opt.label;
+    select.appendChild(option);
+  });
+  select.value = value;
+  select.addEventListener('change', () => onChange(select.value));
+  return select;
+}
 
-  btn.classList.add('is-loading');
-  btn.disabled = true;
-
-  try {
-    // random dari beberapa halaman pertama Popular Movies biar hasilnya
-    // bervariasi, bukan cuma muter-muter di 20 film yang sama
-    const page = Math.floor(Math.random() * 5) + 1;
-    const data = await fetchPopularMovies(page);
-    const results = data.results || [];
-
-    if (results.length === 0) throw new Error('Data film kosong');
-
-    const pick = results[Math.floor(Math.random() * results.length)];
-    window.location.href = `detail.html?id=${pick.id}&type=movie`;
-  } catch (error) {
-    console.error('Gagal mengambil film random:', error);
-    showToast('Could not pick a random movie, try again');
-    btn.classList.remove('is-loading');
-    btn.disabled = false;
+function buildSurpriseField(labelText, control, hintText) {
+  const field = document.createElement('div');
+  field.className = 'dialog__field';
+  const label = document.createElement('span');
+  label.className = 'dialog__label';
+  label.textContent = labelText;
+  field.appendChild(label);
+  field.appendChild(control);
+  if (hintText) {
+    const hint = document.createElement('p');
+    hint.className = 'dialog__hint';
+    hint.textContent = hintText;
+    field.appendChild(hint);
   }
+  return field;
+}
+
+function openSurpriseDialog() {
+  if (document.querySelector('.dialog--surprise')) return; // cegah dialog dobel
+
+  const prefs = loadSurprisePrefs();
+  const seenKeys = new Set(); // judul yang sudah muncul, biar "Try another" gak ngulang
+  let genreData = { movie: [], tv: [] };
+
+  const dialog = createDialog('dialog--surprise');
+
+  // ---------- tampilan 1, form selera ----------
+  const form = document.createElement('form');
+  form.className = 'dialog__body';
+  form.noValidate = true;
+  form.appendChild(buildDialogHeader('Surprise Me', 'Tell us what you are in the mood for and we will pick something.'));
+
+  // tipe, radio yang disembunyikan dan dibungkus label (gaya .segmented)
+  const segmented = document.createElement('div');
+  segmented.className = 'segmented';
+  segmented.setAttribute('role', 'radiogroup');
+  segmented.setAttribute('aria-label', 'Movies or TV shows');
+  SURPRISE_TYPES.forEach((opt) => {
+    const label = document.createElement('label');
+    label.className = 'segmented__option';
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'surpriseType';
+    radio.value = opt.value;
+    radio.checked = prefs.type === opt.value;
+    radio.addEventListener('change', () => {
+      prefs.type = opt.value;
+      refreshGenreAvailability();
+    });
+    label.appendChild(radio);
+    label.appendChild(document.createTextNode(opt.label));
+    segmented.appendChild(label);
+  });
+  form.appendChild(buildSurpriseField('Type', segmented));
+
+  const genreHolder = document.createElement('div');
+  genreHolder.className = 'chip-group';
+  genreHolder.textContent = 'Loading genres...';
+  form.appendChild(buildSurpriseField('Genre', genreHolder, 'Pick as many as you like, any one of them counts as a match.'));
+
+  const durationSelect = buildSurpriseSelect(SURPRISE_DURATIONS, prefs.maxRuntime, 'Duration', (v) => {
+    prefs.maxRuntime = v;
+  });
+  const ratingSelect = buildSurpriseSelect(SURPRISE_RATINGS, prefs.minRating, 'Minimum rating', (v) => {
+    prefs.minRating = v;
+  });
+  const row = document.createElement('div');
+  row.className = 'dialog__row';
+  row.appendChild(buildSurpriseField('Duration', durationSelect));
+  row.appendChild(buildSurpriseField('Minimum rating', ratingSelect));
+  form.appendChild(row);
+  const durationHint = document.createElement('p');
+  durationHint.className = 'dialog__hint';
+  durationHint.textContent = 'For TV shows the duration is the length of one episode.';
+  form.appendChild(durationHint);
+
+  const skipLabel = document.createElement('label');
+  skipLabel.className = 'check';
+  const skipInput = document.createElement('input');
+  skipInput.type = 'checkbox';
+  skipInput.checked = prefs.skipWatched;
+  skipInput.addEventListener('change', () => {
+    prefs.skipWatched = skipInput.checked;
+  });
+  skipLabel.appendChild(skipInput);
+  skipLabel.appendChild(document.createTextNode('Skip titles I already marked as watched'));
+  form.appendChild(skipLabel);
+
+  const messageEl = document.createElement('p');
+  messageEl.className = 'dialog__error';
+  messageEl.setAttribute('role', 'alert');
+  messageEl.hidden = true;
+  form.appendChild(messageEl);
+
+  const footer = document.createElement('div');
+  footer.className = 'dialog__footer';
+
+  const resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.className = 'btn btn--ghost';
+  resetBtn.textContent = 'Reset';
+
+  const submitBtn = document.createElement('button');
+  submitBtn.type = 'submit';
+  submitBtn.className = 'btn btn--primary';
+  submitBtn.textContent = 'Surprise me';
+
+  footer.appendChild(resetBtn);
+  footer.appendChild(submitBtn);
+  form.appendChild(footer);
+
+  // ---------- tampilan 2, hasil ----------
+  const resultView = document.createElement('div');
+  resultView.className = 'dialog__body surprise-result';
+  resultView.hidden = true;
+
+  dialog.appendChild(form);
+  dialog.appendChild(resultView);
+  dialog.showModal();
+
+  // ---------- genre ----------
+  const genreInputs = new Map(); // nama genre -> checkbox
+
+  // di mode TV Shows, genre yang gak punya padanan di TMDB TV dibuat gak bisa dipilih
+  function refreshGenreAvailability() {
+    genreInputs.forEach((input, name) => {
+      const unavailable = prefs.type === 'tv' && resolveSurpriseGenreIds('tv', [name], genreData.tv).length === 0;
+      input.disabled = unavailable;
+      input.parentElement.title = unavailable ? 'Not available for TV shows' : '';
+      if (unavailable && input.checked) {
+        input.checked = false;
+        prefs.genres = prefs.genres.filter((g) => g !== name);
+      }
+    });
+  }
+
+  Promise.allSettled([fetchMovieGenres(), fetchTVGenres()]).then(([movieRes, tvRes]) => {
+    genreData = {
+      movie: movieRes.status === 'fulfilled' ? movieRes.value.genres || [] : [],
+      tv: tvRes.status === 'fulfilled' ? tvRes.value.genres || [] : [],
+    };
+
+    const names = genreData.movie.map((g) => g.name).filter((name) => name !== 'TV Movie');
+    genreHolder.textContent = '';
+
+    if (names.length === 0) {
+      genreHolder.textContent = 'Genres could not be loaded, the other filters still work.';
+      prefs.genres = [];
+      return;
+    }
+
+    prefs.genres = prefs.genres.filter((name) => names.includes(name));
+    names.forEach((name) => {
+      const chip = document.createElement('label');
+      chip.className = 'chip';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = prefs.genres.includes(name);
+      input.addEventListener('change', () => {
+        prefs.genres = input.checked ? [...prefs.genres, name] : prefs.genres.filter((g) => g !== name);
+      });
+      const text = document.createElement('span');
+      text.textContent = name;
+      chip.appendChild(input);
+      chip.appendChild(text);
+      genreHolder.appendChild(chip);
+      genreInputs.set(name, input);
+    });
+    refreshGenreAvailability();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    Object.assign(prefs, SURPRISE_DEFAULT_PREFS, { genres: [] });
+    segmented.querySelectorAll('input').forEach((radio) => {
+      radio.checked = radio.value === prefs.type;
+    });
+    genreInputs.forEach((input) => {
+      input.checked = false;
+    });
+    durationSelect.value = prefs.maxRuntime;
+    ratingSelect.value = prefs.minRating;
+    skipInput.checked = prefs.skipWatched;
+    showMessage('');
+    refreshGenreAvailability();
+  });
+
+  // ---------- aksi ----------
+  function showMessage(text) {
+    messageEl.textContent = text;
+    messageEl.hidden = !text;
+  }
+
+  // return judul yang terpilih, atau null kalau gagal (pesannya sudah ditampilkan)
+  async function runPick() {
+    showMessage('');
+    submitBtn.disabled = true;
+    submitBtn.classList.add('is-loading');
+    submitBtn.textContent = 'Picking...';
+    saveSurprisePrefs(prefs);
+
+    try {
+      const pick = await pickSurprise(prefs, genreData, seenKeys);
+      if (!pick) {
+        showMessage(
+          seenKeys.size > 0
+            ? 'No more new matches for these filters. Try loosening them a bit.'
+            : 'Nothing matched these filters. Try loosening them a bit.'
+        );
+        return null;
+      }
+      seenKeys.add(`${pick.type}:${pick.id}`);
+      return pick;
+    } catch (error) {
+      console.error('Gagal memilih judul acak:', error);
+      showMessage('Could not reach TMDB, please try again.');
+      return null;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('is-loading');
+      submitBtn.textContent = 'Surprise me';
+    }
+  }
+
+  function showForm() {
+    resultView.hidden = true;
+    form.hidden = false;
+  }
+
+  function renderResult(pick) {
+    resultView.textContent = '';
+    resultView.appendChild(buildDialogHeader('How about this one?'));
+
+    const detailUrl = `detail.html?id=${pick.id}&type=${pick.type}`;
+
+    const posterLink = document.createElement('a');
+    posterLink.className = 'surprise-result__poster';
+    posterLink.href = detailUrl;
+    posterLink.setAttribute('aria-label', pick.title);
+    const img = document.createElement('img');
+    img.src = getImageUrl(pick.posterPath, 'posterSmall');
+    img.alt = '';
+    attachImageFallback(img);
+    posterLink.appendChild(img);
+
+    const info = document.createElement('div');
+    info.className = 'surprise-result__info';
+
+    const kind = document.createElement('p');
+    kind.className = 'surprise-result__kind';
+    kind.textContent = `${pick.type === 'movie' ? 'Movie' : 'TV Show'} · ${pick.year} · ${formatRating(pick.rating)}`;
+
+    const title = document.createElement('h3');
+    title.className = 'surprise-result__title';
+    title.textContent = pick.title;
+
+    const overview = document.createElement('p');
+    overview.className = 'surprise-result__overview';
+    overview.textContent = pick.overview || 'No description available yet.';
+
+    info.appendChild(kind);
+    info.appendChild(title);
+    info.appendChild(overview);
+
+    const resultRow = document.createElement('div');
+    resultRow.className = 'surprise-result__row';
+    resultRow.appendChild(posterLink);
+    resultRow.appendChild(info);
+    resultView.appendChild(resultRow);
+
+    const resultFooter = document.createElement('div');
+    resultFooter.className = 'dialog__footer surprise-result__footer';
+
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'btn btn--ghost';
+    backBtn.textContent = 'Change filters';
+    backBtn.addEventListener('click', showForm);
+
+    const againBtn = document.createElement('button');
+    againBtn.type = 'button';
+    againBtn.className = 'btn btn--outline';
+    againBtn.textContent = 'Try another';
+    againBtn.addEventListener('click', async () => {
+      againBtn.disabled = true;
+      againBtn.textContent = 'Picking...';
+      const next = await runPick();
+      if (next) renderResult(next);
+      else showForm(); // gagal atau habis, balik ke form supaya pesannya kelihatan
+    });
+
+    const openLink = document.createElement('a');
+    openLink.className = 'btn btn--primary';
+    openLink.href = detailUrl;
+    openLink.textContent = 'View details';
+
+    resultFooter.appendChild(backBtn);
+    resultFooter.appendChild(againBtn);
+    resultFooter.appendChild(openLink);
+    resultView.appendChild(resultFooter);
+
+    form.hidden = true;
+    resultView.hidden = false;
+    openLink.focus();
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const pick = await runPick();
+    if (pick) renderResult(pick);
+  });
 }
 
 /* =========================================================
@@ -522,6 +1015,341 @@ function addRecentlyViewed(item) {
  */
 function clearRecentlyViewed() {
   localStorage.removeItem(RECENTLY_VIEWED_KEY);
+}
+
+/* =========================================================
+   DAFTAR BUATAN PENGGUNA (localStorage)
+   Selain watchlist utama, user bisa bikin daftar sendiri
+   seperti "Nonton Weekend" atau "Horor Favorit". Disimpan di key
+   terpisah (LISTS_STORAGE_KEY), watchlist utama tidak diubah.
+   Struktur data (array of object):
+   {
+     id: string,
+     name: string,
+     items: [{ id, type, title, posterPath, rating, year }]
+   }
+   ========================================================= */
+
+function getCustomLists() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LISTS_STORAGE_KEY));
+    if (!Array.isArray(parsed)) return [];
+    // buang entri yang bentuknya rusak supaya halaman gak error
+    return parsed.filter(
+      (list) => list && typeof list.id === 'string' && typeof list.name === 'string' && Array.isArray(list.items)
+    );
+  } catch (error) {
+    console.error('Gagal membaca daftar dari localStorage:', error);
+    return [];
+  }
+}
+
+function saveCustomLists(lists) {
+  try {
+    localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify(lists));
+    window.dispatchEvent(new CustomEvent('lists:change', { detail: lists }));
+  } catch (error) {
+    console.error('Gagal menyimpan daftar:', error);
+    showToast('Could not save your lists, storage may be full');
+  }
+}
+
+function getCustomList(listId) {
+  return getCustomLists().find((list) => list.id === listId) || null;
+}
+
+/**
+ * Cek nama daftar. Return teks error, atau null kalau namanya oke.
+ * @param {string} name
+ * @param {string} [ignoreId] - id daftar yang lagi di-rename (boleh sama dengan namanya sendiri)
+ */
+function validateListName(name, ignoreId) {
+  const trimmed = name.trim();
+  if (!trimmed) return 'Give your list a name.';
+  if (trimmed.length > LIST_NAME_MAX_LENGTH) return `Keep the name under ${LIST_NAME_MAX_LENGTH} characters.`;
+
+  const lowered = trimmed.toLowerCase();
+  const taken =
+    lowered === 'watchlist' ||
+    getCustomLists().some((list) => list.id !== ignoreId && list.name.toLowerCase() === lowered);
+  if (taken) return 'You already have a list with that name.';
+
+  if (!ignoreId && getCustomLists().length >= LISTS_MAX) return `You can have up to ${LISTS_MAX} lists.`;
+  return null;
+}
+
+/**
+ * Membuat daftar baru.
+ * @returns {{list: Object}|{error: string}}
+ */
+function createCustomList(name) {
+  const error = validateListName(name);
+  if (error) return { error };
+
+  const list = {
+    id: `l${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    name: name.trim(),
+    items: [],
+  };
+  saveCustomLists([...getCustomLists(), list]);
+  return { list };
+}
+
+function renameCustomList(listId, name) {
+  const error = validateListName(name, listId);
+  if (error) return { error };
+
+  const lists = getCustomLists();
+  const list = lists.find((l) => l.id === listId);
+  if (!list) return { error: 'That list no longer exists.' };
+  list.name = name.trim();
+  saveCustomLists(lists);
+  return { list };
+}
+
+/**
+ * Menghapus daftar. Snapshot seluruh daftar sebelum dihapus dikembalikan
+ * supaya pemanggilnya bisa nawarin "Undo" lewat toast.
+ */
+function deleteCustomList(listId) {
+  const snapshot = getCustomLists();
+  saveCustomLists(snapshot.filter((list) => list.id !== listId));
+  return snapshot;
+}
+
+function restoreCustomLists(snapshot) {
+  saveCustomLists(snapshot);
+}
+
+function isInCustomList(listId, id, type) {
+  const list = getCustomList(listId);
+  return Boolean(list && list.items.some((item) => item.id === id && item.type === type));
+}
+
+function addToCustomList(listId, item) {
+  const lists = getCustomLists();
+  const list = lists.find((l) => l.id === listId);
+  if (!list || list.items.some((i) => i.id === item.id && i.type === item.type)) return;
+  list.items.unshift(item); // item baru di paling depan, sama kayak watchlist
+  saveCustomLists(lists);
+}
+
+function removeFromCustomList(listId, id, type) {
+  const lists = getCustomLists();
+  const list = lists.find((l) => l.id === listId);
+  if (!list) return;
+  list.items = list.items.filter((i) => !(i.id === id && i.type === type));
+  saveCustomLists(lists);
+}
+
+/**
+ * Menghapus sekelompok item dari satu daftar sekaligus (tombol "Clear All").
+ * @returns {Array} snapshot seluruh daftar sebelum dihapus, buat "Undo"
+ */
+function clearCustomListItems(listId, itemsToRemove) {
+  const snapshot = getCustomLists();
+  const removeKeys = new Set(itemsToRemove.map((i) => `${i.type}:${i.id}`));
+  const lists = getCustomLists();
+  const list = lists.find((l) => l.id === listId);
+  if (list) {
+    list.items = list.items.filter((i) => !removeKeys.has(`${i.type}:${i.id}`));
+    saveCustomLists(lists);
+  }
+  return snapshot;
+}
+
+/**
+ * Dialog kecil buat isi nama daftar (dipakai buat bikin dan rename).
+ * @param {Object} options
+ *   title        - judul dialog
+ *   initial      - isi awal kolom nama
+ *   confirmLabel - teks tombol utama
+ *   onSubmit     - dipanggil dengan nama, return teks error kalau gagal
+ *                  atau kosong kalau berhasil (dialog ditutup)
+ */
+function openNameDialog({ title, initial = '', confirmLabel = 'Save', onSubmit }) {
+  const dialog = createDialog('dialog--small');
+
+  const form = document.createElement('form');
+  form.className = 'dialog__body';
+  form.noValidate = true;
+  form.appendChild(buildDialogHeader(title));
+
+  const field = document.createElement('label');
+  field.className = 'dialog__field';
+  const label = document.createElement('span');
+  label.className = 'dialog__label';
+  label.textContent = 'List name';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'dialog__input';
+  input.maxLength = LIST_NAME_MAX_LENGTH;
+  input.placeholder = 'Weekend Watch, Favorite Horror...';
+  input.value = initial;
+  field.appendChild(label);
+  field.appendChild(input);
+  form.appendChild(field);
+
+  const errorEl = document.createElement('p');
+  errorEl.className = 'dialog__error';
+  errorEl.setAttribute('role', 'alert');
+  errorEl.hidden = true;
+  form.appendChild(errorEl);
+
+  const footer = document.createElement('div');
+  footer.className = 'dialog__footer';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'btn btn--ghost';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', () => dialog.close());
+  const confirmBtn = document.createElement('button');
+  confirmBtn.type = 'submit';
+  confirmBtn.className = 'btn btn--primary';
+  confirmBtn.textContent = confirmLabel;
+  footer.appendChild(cancelBtn);
+  footer.appendChild(confirmBtn);
+  form.appendChild(footer);
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const error = onSubmit(input.value);
+    if (error) {
+      errorEl.textContent = error;
+      errorEl.hidden = false;
+      input.focus();
+      return;
+    }
+    dialog.close();
+  });
+
+  dialog.appendChild(form);
+  dialog.showModal();
+  input.focus();
+  input.select();
+}
+
+/**
+ * Dialog "Save to list" buat satu judul. Isinya watchlist utama dan semua
+ * daftar buatan user dalam bentuk checkbox, plus kolom buat bikin daftar baru.
+ * Perubahan langsung tersimpan begitu checkbox diklik.
+ * @param {Object} item - { id, type, title, posterPath, rating, year }
+ * @param {Function} [onClose] - dipanggil saat dialog ditutup, buat update tombol di halaman
+ */
+function openListPicker(item, onClose) {
+  const dialog = createDialog('dialog--small');
+  const body = document.createElement('div');
+  body.className = 'dialog__body';
+  dialog.appendChild(body);
+
+  function render() {
+    body.innerHTML = '';
+    body.appendChild(buildDialogHeader('Save to list', item.title));
+
+    const options = document.createElement('div');
+    options.className = 'list-picker';
+
+    const rows = [
+      {
+        name: 'Watchlist',
+        count: getWatchlist().length,
+        checked: isInWatchlist(item.id, item.type),
+        toggle: (on) => (on ? addToWatchlist(item) : removeFromWatchlist(item.id, item.type)),
+      },
+      ...getCustomLists().map((list) => ({
+        name: list.name,
+        count: list.items.length,
+        checked: list.items.some((i) => i.id === item.id && i.type === item.type),
+        toggle: (on) => (on ? addToCustomList(list.id, item) : removeFromCustomList(list.id, item.id, item.type)),
+      })),
+    ];
+
+    rows.forEach((row) => {
+      const label = document.createElement('label');
+      label.className = 'check list-picker__row';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = row.checked;
+      checkbox.addEventListener('change', () => {
+        const rowIndex = rows.indexOf(row);
+        row.toggle(checkbox.checked);
+        render();
+        // fokus dikembalikan ke checkbox yang sama setelah render ulang
+        const same = body.querySelectorAll('.list-picker input')[rowIndex];
+        if (same) same.focus();
+      });
+
+      const name = document.createElement('span');
+      name.className = 'list-picker__name';
+      name.textContent = row.name;
+
+      const count = document.createElement('span');
+      count.className = 'list-picker__count';
+      count.textContent = row.count;
+
+      label.appendChild(checkbox);
+      label.appendChild(name);
+      label.appendChild(count);
+      options.appendChild(label);
+    });
+    body.appendChild(options);
+
+    const createForm = document.createElement('form');
+    createForm.className = 'list-picker__create';
+    createForm.noValidate = true;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'dialog__input';
+    input.maxLength = LIST_NAME_MAX_LENGTH;
+    input.placeholder = 'New list name';
+    input.setAttribute('aria-label', 'New list name');
+
+    const createBtn = document.createElement('button');
+    createBtn.type = 'submit';
+    createBtn.className = 'btn btn--outline';
+    createBtn.textContent = 'Create';
+
+    createForm.appendChild(input);
+    createForm.appendChild(createBtn);
+    body.appendChild(createForm);
+
+    const errorEl = document.createElement('p');
+    errorEl.className = 'dialog__error';
+    errorEl.setAttribute('role', 'alert');
+    errorEl.hidden = true;
+    body.appendChild(errorEl);
+
+    createForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const result = createCustomList(input.value);
+      if (result.error) {
+        errorEl.textContent = result.error;
+        errorEl.hidden = false;
+        input.focus();
+        return;
+      }
+      addToCustomList(result.list.id, item);
+      render();
+    });
+
+    const footer = document.createElement('div');
+    footer.className = 'dialog__footer';
+    const doneBtn = document.createElement('button');
+    doneBtn.type = 'button';
+    doneBtn.className = 'btn btn--primary';
+    doneBtn.textContent = 'Done';
+    doneBtn.addEventListener('click', () => dialog.close());
+    footer.appendChild(doneBtn);
+    body.appendChild(footer);
+  }
+
+  render();
+  dialog.addEventListener('close', () => {
+    if (typeof onClose === 'function') onClose();
+  });
+  dialog.showModal();
 }
 
 /* =========================================================
@@ -1265,3 +2093,86 @@ document.addEventListener('DOMContentLoaded', () => {
   initNavbarAutoHide();
   initSurpriseMeButton();
 });
+// Pilihan platform mengikuti negara dan jenis katalog, bukan daftar hardcode.
+function initStreamingFilters({ type, state, onChange }) {
+  const country = document.getElementById('streamingCountry');
+  const platform = document.getElementById('streamingPlatform');
+  const hint = document.getElementById('streamingHint');
+  let request = 0;
+  let providersLoading = false;
+  const sync = () => {
+    if (state.watchRegion && ![...country.options].some(option => option.value === state.watchRegion)) {
+      country.add(new Option(state.watchRegion, state.watchRegion));
+    }
+    country.value = state.watchRegion;
+    const search = Boolean(state.searchQuery);
+    country.disabled = search;
+    platform.disabled = search || !state.watchRegion || providersLoading;
+    hint.textContent = search
+      ? 'Clear the title search to browse by streaming platform and country.'
+      : 'Streaming availability by JustWatch. Includes subscriptions, free streaming and ads.';
+  };
+  const loadProviders = async () => {
+    const version = ++request;
+    providersLoading = true;
+    platform.replaceChildren(new Option('All platforms', ''));
+    if (state.providerId) {
+      platform.add(new Option(`Selected platform ${state.providerId}`, state.providerId));
+      platform.value = state.providerId;
+    }
+    sync();
+    if (!state.watchRegion) { providersLoading = false; sync(); return; }
+    try {
+      const data = await fetchStreamingProviders(type, state.watchRegion);
+      if (version !== request) return;
+      platform.replaceChildren(new Option('All platforms', ''));
+      (data.results || []).sort((a, b) => a.provider_name.localeCompare(b.provider_name)).forEach(provider => {
+        platform.add(new Option(provider.provider_name, provider.provider_id));
+      });
+      if (state.providerId && ![...platform.options].some(option => option.value === state.providerId)) {
+        state.providerId = '';
+        onChange();
+      }
+      platform.value = state.providerId;
+      providersLoading = false;
+      sync();
+    } catch {
+      if (version !== request) return;
+      providersLoading = false;
+      sync();
+      platform.disabled = true;
+      hint.textContent = 'Could not load platforms. Change country to retry.';
+    }
+  };
+  country.addEventListener('change', () => {
+    state.watchRegion = country.value;
+    state.providerId = '';
+    state.list = '';
+    loadProviders();
+    onChange();
+  });
+  platform.addEventListener('change', () => {
+    state.providerId = platform.value;
+    state.list = '';
+    onChange();
+  });
+  fetchStreamingRegions().then(data => {
+    const regions = data.results || [];
+    country.replaceChildren(new Option('All countries', ''));
+    regions.sort((a, b) => (a.english_name || a.iso_3166_1).localeCompare(b.english_name || b.iso_3166_1)).forEach(region => {
+      country.add(new Option(region.english_name || region.iso_3166_1, region.iso_3166_1));
+    });
+    if (state.watchRegion && !regions.some(region => region.iso_3166_1 === state.watchRegion)) {
+      state.watchRegion = '';
+      state.providerId = '';
+      onChange();
+    }
+    sync();
+    loadProviders();
+  }).catch(() => {
+    sync();
+    loadProviders();
+  });
+  sync();
+  return sync;
+}

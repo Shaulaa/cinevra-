@@ -10,6 +10,8 @@
 const tvState = {
   page: 1,
   totalPages: 1,
+  watchRegion: '',
+  providerId: '',
   genreIds: [],
   year: '',
   sortBy: 'popularity.desc',
@@ -41,6 +43,8 @@ function getTVHeading() {
 
 function syncTVQueryState() {
   const params = new URLSearchParams();
+  params.set('country', tvState.watchRegion);
+  if (tvState.providerId) params.set('platform', tvState.providerId);
   if (tvState.searchQuery) params.set('search', tvState.searchQuery);
   if (!tvState.searchQuery && tvState.list) params.set('list', tvState.list);
   if (tvState.genreIds.length) params.set('genre', tvState.genreIds.join(','));
@@ -52,8 +56,17 @@ function syncTVQueryState() {
   window.history.replaceState({}, '', nextUrl);
 }
 
+let syncTVStreaming = () => {};
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
+  tvState.watchRegion = params.has('country') ? params.get('country') : (params.has('search') || params.has('list') ? '' : 'ID');
+  tvState.providerId = /^\d+$/.test(params.get('platform') || '') ? params.get('platform') : '';
+  syncTVStreaming = initStreamingFilters({ type: 'tv', state: tvState, onChange: () => {
+    tvState.page = 1;
+    syncTVQueryState();
+    setupTVSearchMode();
+    loadTVShows({ reset: true });
+  } });
   tvState.searchQuery = params.get('search') || '';
   const urlGenre = params.get('genre');
   if (urlGenre) tvState.genreIds = urlGenre.split(',').filter(Boolean);
@@ -114,6 +127,7 @@ async function loadListHeroBackdrop() {
 }
 
 function setupTVSearchMode() {
+  syncTVStreaming();
   const pageSearchInput = document.getElementById('pageSearchInput');
   const pageSearchClearBtn = document.getElementById('pageSearchClearBtn');
   const isSearchActive = Boolean(tvState.searchQuery);
@@ -199,6 +213,7 @@ async function loadTVShows({ reset }) {
     currentTVController.abort();
   }
   currentTVController = new AbortController();
+  const controller = currentTVController;
 
   // simpan page sebelum fetch, agar kalau loadMore gagal page tetap di halaman yang sama
   const currentPage = tvState.page;
@@ -228,10 +243,13 @@ async function loadTVShows({ reset }) {
         genreId: tvState.genreIds.join('|'),
         year: tvState.year,
         sortBy: tvState.sortBy,
+        providerId: tvState.providerId,
+        watchRegion: tvState.watchRegion,
         signal: currentTVController.signal,
       });
     }
 
+    if (controller.signal.aborted) return;
     tvState.totalPages = data.total_pages || 1;
 
     if (reset) grid.innerHTML = '';
@@ -265,6 +283,7 @@ async function loadTVShows({ reset }) {
       pageSearchInput.value = tvState.searchQuery;
     }
   } catch (error) {
+    if (controller.signal.aborted) return;
     console.error('Gagal memuat TV shows:', error);
     // kalau ini bukan abort error (request sengaja dibatalkan), baru tampilkan error
     if (error.name !== 'AbortError') {
@@ -281,10 +300,12 @@ async function loadTVShows({ reset }) {
       tvState.page = currentPage;
     }
   } finally {
-    loadMoreBtn.textContent = 'Load More';
-    loadMoreBtn.disabled = false;
-    hidePageProgress();
-    // reset controller agar bisa dipakai lagi di load berikutnya
-    currentTVController = null;
+    if (currentTVController === controller) {
+      loadMoreBtn.textContent = 'Load More';
+      loadMoreBtn.disabled = false;
+      hidePageProgress();
+      // reset controller agar bisa dipakai lagi di load berikutnya
+      currentTVController = null;
+    }
   }
 }

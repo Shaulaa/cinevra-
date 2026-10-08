@@ -11,6 +11,8 @@
 const movieState = {
   page: 1,
   totalPages: 1,
+  watchRegion: '',
+  providerId: '',
   genreIds: [],
   year: '',
   sortBy: 'popularity.desc',
@@ -50,6 +52,8 @@ function getMovieHeading() {
 
 function syncMovieQueryState() {
   const params = new URLSearchParams();
+  params.set('country', movieState.watchRegion);
+  if (movieState.providerId) params.set('platform', movieState.providerId);
   if (movieState.searchQuery) params.set('search', movieState.searchQuery);
   if (!movieState.searchQuery && movieState.list) params.set('list', movieState.list);
   if (movieState.genreIds.length) params.set('genre', movieState.genreIds.join(','));
@@ -61,8 +65,17 @@ function syncMovieQueryState() {
   window.history.replaceState({}, '', nextUrl);
 }
 
+let syncMovieStreaming = () => {};
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
+  movieState.watchRegion = params.has('country') ? params.get('country') : (params.has('search') || params.has('list') ? '' : 'ID');
+  movieState.providerId = /^\d+$/.test(params.get('platform') || '') ? params.get('platform') : '';
+  syncMovieStreaming = initStreamingFilters({ type: 'movie', state: movieState, onChange: () => {
+    movieState.page = 1;
+    syncMovieQueryState();
+    setupSearchMode();
+    loadMovies({ reset: true });
+  } });
   movieState.searchQuery = params.get('search') || '';
   const urlGenre = params.get('genre');
   if (urlGenre) movieState.genreIds = urlGenre.split(',').filter(Boolean);
@@ -129,6 +142,7 @@ async function loadListHeroBackdrop() {
  * dinonaktifkan karena endpoint TMDB-nya tidak mendukung kombinasi itu.
  */
 function setupSearchMode() {
+  syncMovieStreaming();
   const pageSearchInput = document.getElementById('pageSearchInput');
   const pageSearchClearBtn = document.getElementById('pageSearchClearBtn');
   const isSearchActive = Boolean(movieState.searchQuery);
@@ -220,6 +234,7 @@ async function loadMovies({ reset }) {
     currentMoviesController.abort();
   }
   currentMoviesController = new AbortController();
+  const controller = currentMoviesController;
 
   // simpan page sebelum fetch, agar kalau loadMore gagal page tetap di halaman yang sama
   const currentPage = movieState.page;
@@ -251,10 +266,13 @@ async function loadMovies({ reset }) {
         genreId: movieState.genreIds.join('|'), // pipe = OR (film yang punya salah satu genre ini)
         year: movieState.year,
         sortBy: movieState.sortBy,
+        providerId: movieState.providerId,
+        watchRegion: movieState.watchRegion,
         signal: currentMoviesController.signal,
       });
     }
 
+    if (controller.signal.aborted) return;
     movieState.totalPages = data.total_pages || 1;
 
     if (reset) grid.innerHTML = '';
@@ -288,6 +306,7 @@ async function loadMovies({ reset }) {
       pageSearchInput.value = movieState.searchQuery;
     }
   } catch (error) {
+    if (controller.signal.aborted) return;
     console.error('Gagal memuat film:', error);
     // kalau ini bukan abort error (request sengaja dibatalkan), baru tampilkan error
     if (error.name !== 'AbortError') {
@@ -304,10 +323,12 @@ async function loadMovies({ reset }) {
       movieState.page = currentPage;
     }
   } finally {
-    loadMoreBtn.textContent = 'Load More';
-    loadMoreBtn.disabled = false;
-    hidePageProgress();
-    // reset controller agar bisa dipakai lagi di load berikutnya
-    currentMoviesController = null;
+    if (currentMoviesController === controller) {
+      loadMoreBtn.textContent = 'Load More';
+      loadMoreBtn.disabled = false;
+      hidePageProgress();
+      // reset controller agar bisa dipakai lagi di load berikutnya
+      currentMoviesController = null;
+    }
   }
 }

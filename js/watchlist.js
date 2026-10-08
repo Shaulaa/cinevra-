@@ -1,20 +1,157 @@
 /* =========================================================
   CINEVRA - js/watchlist.js
    Logic untuk watchlist.html.
-   Semua datanya dari localStorage (lihat getWatchlist() di main.js),
-   TIDAK ada fetch ke TMDB di halaman ini.
+   Semua datanya dari localStorage (lihat getWatchlist() dan
+   getCustomLists() di main.js), TIDAK ada fetch ke TMDB di halaman ini.
+   Halaman ini nampilin satu daftar dalam satu waktu, yaitu watchlist
+   utama atau salah satu daftar buatan user (dipilih lewat ?list=id).
    ========================================================= */
 
 let activeFilter = 'all'; // 'all' | 'movie' | 'tv'
 let activeStatus = 'all'; // 'all' | 'watched' | 'unwatched'
 let activeSort = 'added-desc';
 let searchQuery = '';
+const DEFAULT_LIST_ID = 'watchlist';
+let activeListId = DEFAULT_LIST_ID;
 
 document.addEventListener('DOMContentLoaded', () => {
+  const requested = new URLSearchParams(window.location.search).get('list');
+  if (requested && getCustomList(requested)) activeListId = requested;
+
+  renderListSwitcher();
   renderWatchlistPage();
   bindTabs();
   bindControls();
+  bindListActions();
 });
+
+function isDefaultList() {
+  return activeListId === DEFAULT_LIST_ID;
+}
+
+/**
+ * Item dari daftar yang lagi dibuka. Kalau daftarnya ternyata sudah
+ * gak ada (misal baru dihapus), balik ke watchlist utama.
+ */
+function getActiveItems() {
+  if (isDefaultList()) return getWatchlist();
+  const list = getCustomList(activeListId);
+  if (list) return list.items;
+  switchList(DEFAULT_LIST_ID);
+  return getWatchlist();
+}
+
+function switchList(listId) {
+  activeListId = listId;
+  activeStatus = 'all';
+  document.getElementById('watchlistStatusFilter').value = 'all';
+
+  // URL ikut diubah biar daftar yang dibuka bisa di-bookmark atau dibagi
+  const url = new URL(window.location.href);
+  if (listId === DEFAULT_LIST_ID) url.searchParams.delete('list');
+  else url.searchParams.set('list', listId);
+  history.replaceState(null, '', url);
+
+  renderListSwitcher();
+  renderWatchlistPage();
+}
+
+/**
+ * Baris tombol buat pindah antar daftar, plus tombol "New list".
+ */
+function renderListSwitcher() {
+  const switcher = document.getElementById('listSwitcher');
+  switcher.innerHTML = '';
+
+  const entries = [
+    { id: DEFAULT_LIST_ID, name: 'Watchlist', count: getWatchlist().length },
+    ...getCustomLists().map((list) => ({ id: list.id, name: list.name, count: list.items.length })),
+  ];
+
+  entries.forEach((entry) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `list-chip${entry.id === activeListId ? ' is-active' : ''}`;
+    btn.setAttribute('aria-pressed', String(entry.id === activeListId));
+
+    const name = document.createElement('span');
+    name.className = 'list-chip__name';
+    name.textContent = entry.name;
+
+    const count = document.createElement('span');
+    count.className = 'list-chip__count';
+    count.textContent = entry.count;
+
+    btn.appendChild(name);
+    btn.appendChild(count);
+    btn.addEventListener('click', () => switchList(entry.id));
+    switcher.appendChild(btn);
+  });
+
+  const newBtn = document.createElement('button');
+  newBtn.type = 'button';
+  newBtn.className = 'list-chip list-chip--new';
+  newBtn.innerHTML =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+  newBtn.appendChild(document.createTextNode('New list'));
+  newBtn.addEventListener('click', handleCreateList);
+  switcher.appendChild(newBtn);
+}
+
+function handleCreateList() {
+  openNameDialog({
+    title: 'New list',
+    confirmLabel: 'Create',
+    onSubmit: (name) => {
+      const result = createCustomList(name);
+      if (result.error) return result.error;
+      switchList(result.list.id);
+      return null;
+    },
+  });
+}
+
+/**
+ * Tombol Rename dan Delete di header, cuma tampil untuk daftar buatan user.
+ */
+function bindListActions() {
+  document.getElementById('renameListBtn').addEventListener('click', () => {
+    const list = getCustomList(activeListId);
+    if (!list) return;
+
+    openNameDialog({
+      title: 'Rename list',
+      initial: list.name,
+      confirmLabel: 'Save',
+      onSubmit: (name) => {
+        const result = renameCustomList(list.id, name);
+        if (result.error) return result.error;
+        renderListSwitcher();
+        renderWatchlistPage();
+        return null;
+      },
+    });
+  });
+
+  document.getElementById('deleteListBtn').addEventListener('click', () => {
+    const list = getCustomList(activeListId);
+    if (!list) return;
+
+    const snapshot = deleteCustomList(list.id);
+    switchList(DEFAULT_LIST_ID);
+
+    // sama kayak Clear All, ada Undo supaya gak hilang permanen kalau kepencet
+    showToast(`"${list.name}" deleted`, {
+      actionLabel: 'Undo',
+      duration: 5000,
+      onAction: () => {
+        restoreCustomLists(snapshot);
+        switchList(list.id);
+        showToast('List restored');
+      },
+    });
+  });
+}
 
 function bindTabs() {
   const tabs = Array.from(document.querySelectorAll('.watchlist-tab'));
@@ -113,7 +250,14 @@ function sortWatchlist(list) {
  * pencarian yang aktif.
  */
 function renderWatchlistPage() {
-  const list = getWatchlist();
+  const list = getActiveItems();
+  const customList = isDefaultList() ? null : getCustomList(activeListId);
+  renderListSwitcher();
+
+  document.getElementById('watchlistTitle').textContent = customList ? customList.name : 'My Watchlist';
+  document.getElementById('listActions').hidden = !customList;
+  // status "sudah ditonton" cuma ada di watchlist utama
+  document.getElementById('watchlistStatusFilter').hidden = Boolean(customList);
 
   // update angka di tiap tab (angkanya tetap berdasarkan tipe saja,
   // gak ikut kepengaruh status/search, biar tab tetap jadi acuan total)
@@ -122,7 +266,11 @@ function renderWatchlistPage() {
   document.getElementById('countTV').textContent = list.filter((i) => i.type === 'tv').length;
 
   document.getElementById('watchlistSubtitle').textContent =
-    list.length > 0 ? `${list.length} titles saved` : 'Movies and TV shows you saved';
+    list.length > 0
+      ? `${list.length} ${list.length === 1 ? 'title' : 'titles'} saved`
+      : customList
+        ? 'Movies and TV shows you put in this list'
+        : 'Movies and TV shows you saved';
 
   let filtered = activeFilter === 'all' ? list : list.filter((i) => i.type === activeFilter);
 
@@ -148,7 +296,7 @@ function renderWatchlistPage() {
   if (filtered.length === 0) {
     grid.style.display = 'none';
     emptyState.style.display = 'flex';
-    updateEmptyStateText(list.length === 0);
+    updateEmptyStateText(list.length === 0, customList);
     return;
   }
 
@@ -166,9 +314,15 @@ function renderWatchlistPage() {
  * Menyesuaikan pesan empty state, beda teks tergantung apakah watchlist
  * benar-benar kosong, atau cuma hasil filter/pencarian yang kosong.
  */
-function updateEmptyStateText(isTrulyEmpty) {
+function updateEmptyStateText(isTrulyEmpty, customList) {
   const title = document.getElementById('emptyTitle');
   const desc = document.getElementById('emptyDesc');
+
+  if (isTrulyEmpty && customList) {
+    title.textContent = 'This list is empty';
+    desc.textContent = 'Open any movie or TV show and tap Add to List to put it here.';
+    return;
+  }
 
   if (isTrulyEmpty) {
     title.textContent = 'Your watchlist is empty';
@@ -192,7 +346,7 @@ function updateEmptyStateText(isTrulyEmpty) {
  * gak beneran ilang permanen kalau ternyata gak sengaja.
  */
 function handleClearAll() {
-  const list = getWatchlist();
+  const list = getActiveItems();
   let visible = activeFilter === 'all' ? list : list.filter((i) => i.type === activeFilter);
   if (activeStatus === 'watched') visible = visible.filter((i) => i.watched);
   else if (activeStatus === 'unwatched') visible = visible.filter((i) => !i.watched);
@@ -200,16 +354,19 @@ function handleClearAll() {
 
   if (visible.length === 0) return;
 
-  const snapshot = clearWatchlistItems(visible);
+  const listId = activeListId;
+  const listName = isDefaultList() ? 'Watchlist' : getCustomList(listId).name;
+  const snapshot = isDefaultList() ? clearWatchlistItems(visible) : clearCustomListItems(listId, visible);
   renderWatchlistPage();
 
-  showToast(`${visible.length} titles removed from Watchlist`, {
+  showToast(`${visible.length} titles removed from ${listName}`, {
     actionLabel: 'Undo',
     duration: 5000,
     onAction: () => {
-      restoreWatchlist(snapshot);
+      if (listId === DEFAULT_LIST_ID) restoreWatchlist(snapshot);
+      else restoreCustomLists(snapshot);
       renderWatchlistPage();
-      showToast('Watchlist restored');
+      showToast(`${listName} restored`);
     },
   });
 }
@@ -222,7 +379,8 @@ function handleClearAll() {
  */
 function renderWatchlistCard(item) {
   const card = document.createElement('article');
-  card.className = `movie-card${item.watched ? ' is-watched' : ''}`;
+  const showWatched = isDefaultList();
+  card.className = `movie-card${showWatched && item.watched ? ' is-watched' : ''}`;
 
   const posterWrap = document.createElement('div');
   posterWrap.className = 'movie-card__poster-wrap';
@@ -263,7 +421,7 @@ function renderWatchlistCard(item) {
   posterWrap.appendChild(ratingBadge);
 
   // badge "Watched" kecil di pojok kiri atas, cuma muncul kalau statusnya aktif
-  if (item.watched) {
+  if (showWatched && item.watched) {
     const watchedBadge = document.createElement('span');
     watchedBadge.className = 'movie-card__watched-badge';
     watchedBadge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
@@ -277,12 +435,13 @@ function renderWatchlistCard(item) {
   watchedBtn.setAttribute('aria-label', item.watched ? 'Mark as unwatched' : 'Mark as watched');
   watchedBtn.setAttribute('aria-pressed', String(Boolean(item.watched)));
   watchedBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-  posterWrap.appendChild(watchedBtn);
+  // daftar buatan user gak punya status ditonton, tombolnya cuma ada di watchlist utama
+  if (showWatched) posterWrap.appendChild(watchedBtn);
 
   const removeBtn = document.createElement('button');
   removeBtn.type = 'button';
   removeBtn.className = 'movie-card__remove-btn';
-  removeBtn.setAttribute('aria-label', 'Remove from Watchlist');
+  removeBtn.setAttribute('aria-label', showWatched ? 'Remove from Watchlist' : 'Remove from this list');
   removeBtn.innerHTML = `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <polyline points="3 6 5 6 21 6"></polyline>
@@ -324,8 +483,9 @@ function renderWatchlistCard(item) {
     e.stopPropagation();
     card.classList.add('is-removing');
     setTimeout(() => {
-      removeFromWatchlist(item.id, item.type);
-      showToast('Removed from Watchlist');
+      if (showWatched) removeFromWatchlist(item.id, item.type);
+      else removeFromCustomList(activeListId, item.id, item.type);
+      showToast(showWatched ? 'Removed from Watchlist' : 'Removed from list');
       renderWatchlistPage(); // render ulang supaya counter & empty state ikut update
     }, 200);
   });

@@ -67,7 +67,7 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"></path></svg>
     </a>
 
-    <button class="navbar__surprise-btn" id="surpriseMeBtn" type="button" aria-label="Surprise Me, pick a random movie">
+    <button class="navbar__surprise-btn" id="surpriseMeBtn" type="button" aria-label="Surprise Me, pick something to watch">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="3" width="18" height="18" rx="4"></rect>
         <circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"></circle>
@@ -138,6 +138,9 @@
         <option value="first_air_date.asc">Sort by: Oldest</option>
       </select>
 
+      <label class="streaming-filter">Streaming country<select class="filter-select" id="streamingCountry"><option value="">All countries</option><option value="ID">Indonesia</option></select></label>
+      <label class="streaming-filter">Platform<select class="filter-select" id="streamingPlatform"><option value="">All platforms</option></select></label>
+      <p class="streaming-hint" id="streamingHint" role="status">Streaming availability by JustWatch. Includes subscriptions, free streaming and ads.</p>
       <span class="filter-bar__count" id="resultCount"></span>
     </div>
 

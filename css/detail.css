@@ -751,3 +751,20 @@
     scroll-snap-align: start;
   }
 }
+/* Rating pribadi dan progres episode mengikuti warna halaman detail. */
+.personal-panel { padding: 24px; margin-bottom: 24px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.personal-panel[hidden] { display: none; }
+.personal-panel h2 { font-family: var(--font-display); font-size: 22px; margin-bottom: 8px; }
+.personal-panel p { color: var(--text-secondary); margin: 8px 0 16px; font-size: 14px; }
+.personal-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.personal-form label { display: grid; gap: 8px; }
+.personal-form__note, .personal-form .personal-actions { grid-column: 1 / -1; }
+.personal-panel input:not([type=checkbox]), .personal-panel select, .personal-panel textarea { width: 100%; padding: 12px; color: var(--text-primary); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); font: inherit; color-scheme: dark; }
+.personal-panel textarea { resize: vertical; }
+.personal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.personal-panel progress { width: 100%; height: 12px; accent-color: var(--accent-gold); margin-bottom: 20px; }
+.episode-list { display: grid; gap: 8px; max-height: 420px; overflow-y: auto; margin-top: 16px; }
+.episode-row { display: flex; gap: 12px; align-items: center; padding: 12px; background: var(--bg); border-radius: var(--radius-sm); cursor: pointer; overflow-wrap: anywhere; }
+.episode-row input { flex-shrink: 0; width: 20px; height: 20px; accent-color: var(--accent-gold); }
+.personal-panel :focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
+@media (max-width: 640px) { .personal-panel { padding: 16px; } .personal-form { grid-template-columns: 1fr; } }

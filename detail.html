@@ -66,7 +66,7 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"></path></svg>
     </a>
 
-    <button class="navbar__surprise-btn" id="surpriseMeBtn" type="button" aria-label="Surprise Me, pick a random movie">
+    <button class="navbar__surprise-btn" id="surpriseMeBtn" type="button" aria-label="Surprise Me, pick something to watch">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="3" width="18" height="18" rx="4"></rect>
         <circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"></circle>
@@ -126,6 +126,10 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"/></svg>
               Add to Watchlist
             </button>
+            <button class="btn btn--ghost" id="detailListBtn" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              Add to List
+            </button>
           </div>
           <div class="detail-info__genres" id="detailGenres"></div>
         </div>
@@ -145,6 +149,26 @@
 
       <!-- ================= WHERE TO WATCH ================= -->
       <!-- disembunyikan lewat JS kalau memang tidak ada data provider buat judul ini -->
+      <section class="personal-panel" id="personalSection" hidden aria-labelledby="personalHeading">
+        <h2 id="personalHeading">My rating and notes</h2>
+        <p>Saved on this browser without an account. Clearing browser data removes these records.</p>
+        <form id="personalForm" class="personal-form">
+          <label>My rating<select id="personalRating"><option value="">Not rated</option></select></label>
+          <label>Watched on<input id="personalDate" type="date"></label>
+          <label class="personal-form__note">Short note<textarea id="personalNote" rows="3" maxlength="1000" placeholder="What did you think?"></textarea></label>
+          <div class="personal-actions"><button class="btn btn--primary" type="submit">Save review</button><button class="btn btn--outline" id="personalClear" type="button">Clear review</button></div>
+        </form>
+        <p id="personalStatus" role="status"></p>
+      </section>
+      <section class="personal-panel" id="episodeSection" hidden aria-labelledby="episodeHeading">
+        <h2 id="episodeHeading">Episode tracker</h2>
+        <p>Track regular seasons here. Specials are excluded from progress.</p>
+        <p id="episodeProgressText" aria-live="polite"></p>
+        <progress id="episodeProgress" value="0" max="1" aria-label="Episodes watched"></progress>
+        <div class="personal-actions"><label>Season <select id="episodeSeason"></select></label><button class="btn btn--outline" id="episodeSeasonToggle" type="button">Mark season watched</button><button class="btn btn--outline" id="episodeRetry" type="button">Retry</button></div>
+        <p id="episodeStatus" role="status"></p>
+        <div id="episodeList" class="episode-list"></div>
+      </section>
       <div class="watch-providers reveal" id="whereToWatchSection" style="display:none;">
         <div class="watch-providers__head">
           <h3 class="about-block__title">Where to Watch</h3>
@@ -241,6 +265,7 @@
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/personal.js"></script>
   <script src="js/detail.js"></script>
 </body>
 </html>

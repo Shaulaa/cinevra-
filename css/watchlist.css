@@ -5,7 +5,82 @@
    ========================================================= */
 
 .watchlist-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
   padding: 40px 0 8px;
+}
+
+.watchlist-head__text {
+  min-width: 0;
+}
+
+.watchlist-head__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.watchlist-head__actions[hidden],
+.watchlist-controls [hidden] {
+  display: none;
+}
+
+.watchlist-head__title {
+  overflow-wrap: anywhere;
+}
+
+/* ---------- LIST SWITCHER (Watchlist + daftar buatan user) ---------- */
+.list-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 20px;
+}
+
+.list-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
+}
+
+.list-chip:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-gold);
+}
+
+.list-chip.is-active {
+  background: var(--surface-hover);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold-soft);
+}
+
+.list-chip__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-chip__count {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.list-chip--new {
+  background: transparent;
+  border-style: dashed;
 }
 
 .watchlist-head__title {

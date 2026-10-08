@@ -357,3 +357,7 @@
   font-size: 13px;
   color: var(--text-secondary);
 }
+.streaming-filter { display: grid; gap: 6px; font-size: 12px; color: var(--text-secondary); min-width: 160px; max-width: 100%; }
+.streaming-filter select { width: 100%; max-width: 260px; }
+.streaming-hint { flex-basis: 100%; font-size: 12px; color: var(--text-secondary); }
+@media (max-width: 640px) { .streaming-filter { flex: 1 1 140px; } .streaming-filter select { max-width: 100%; } }
