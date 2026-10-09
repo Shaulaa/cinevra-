@@ -495,7 +495,7 @@ input:focus-visible {
   text-align: center;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .navbar__search-results {
     width: 100%;
   }
@@ -647,7 +647,7 @@ input:focus-visible {
   opacity: 1;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .navbar {
     padding: 14px 20px;
     gap: 12px;

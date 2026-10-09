@@ -83,3 +83,17 @@ Katalog Movies dan TV Shows punya filter negara dan platform streaming. Negara a
 Jalankan pemeriksaan dengan `node scripts/test-personal.js`, `node scripts/test-personal-ui.js`, `node scripts/test-streaming.js`, dan `node scripts/test-streaming-ui.js`.
 
 Parameter streaming mengikuti [dokumentasi Discover TMDB](https://developer.themoviedb.org/reference/discover-movie). Episode dimuat lewat [endpoint detail season](https://developer.themoviedb.org/reference/tv-season-details).
+
+## My Space
+
+Buka My Space dari navbar untuk memakai tiga fitur personal berikut.
+
+- Backup & Restore mengunduh JSON berisi watchlist, custom Lists, tanda ditonton, rating pribadi, tanggal menonton, catatan dan progres episode. File impor maksimal 2 MB, divalidasi dan ditampilkan ringkasannya sebelum pengguna mengonfirmasi penggantian seluruh library. Download backup lama sebelum restore. API settings dan riwayat browsing tidak disertakan.
+- My Stats menghitung film unik yang ditandai ditonton di Lists atau punya tanggal menonton. Rata-rata memakai rating pribadi film dan TV. Genre favorit dihitung dari film ditonton dengan detail TMDB, sementara aktivitas 12 bulan memakai tanggal menonton film dan TV. Tanda episode tanpa tanggal tidak masuk aktivitas bulanan.
+- For You mengambil rekomendasi dari maksimal enam judul yang diberi rating pribadi minimal 8/10 atau disimpan di Lists, dengan prioritas rating tinggi. Judul tersimpan yang diberi rating lebih rendah tidak dipakai sebagai favorit. Hasil digabung tanpa duplikat, dengan alasan rekomendasi, serta mengecualikan judul tersimpan dan yang sudah diberi rating, tanggal menonton atau progres episode.
+
+Backup dan angka statistik lokal tidak memerlukan internet. Genre favorit dan For You memerlukan konfigurasi TMDB serta koneksi internet. Request yang gagal diberi pesan dan tombol untuk mencoba lagi. Catatan pribadi ikut masuk file backup, jadi simpan file itu di tempat privat.
+
+Jalankan `node scripts/test-library.js` untuk validasi backup, rollback storage, statistik dan sumber rekomendasi. Pengujian Chrome terisolasi tersedia lewat `node scripts/test-library-browser.js` bila Playwright tersedia di lingkungan dan Chrome terpasang. Tidak ada dependency aplikasi baru. Pengujian browser memakai data TMDB tiruan untuk memeriksa interaksi, kondisi gagal dan tata letak 320, 768, 1024 dan 1440 piksel.
+
+For You memakai endpoint resmi [movie recommendations](https://developer.themoviedb.org/reference/movie-recommendations) dan [TV recommendations](https://developer.themoviedb.org/reference/tv-series-recommendations) melalui helper di `js/api.js`.
