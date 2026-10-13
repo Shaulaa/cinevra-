@@ -1,99 +1,164 @@
 # Cinevra
 
-Cinevra adalah website untuk menemukan film dan serial TV dengan tampilan gelap bernuansa sinematik. Proyek ini dibuat dengan HTML, CSS, dan JavaScript murni. Data judul, poster, pemeran, dan trailer diambil dari TMDB. Watchlist disimpan di browser sehingga tetap tersedia saat halaman dibuka kembali.
+Cinevra adalah aplikasi web untuk menjelajahi film dan serial TV dengan tampilan modern, gelap, dan sensasi sinematik. Proyek ini dibangun menggunakan HTML, CSS, dan JavaScript murni, dengan data dari TMDB API.
 
-![Tampilan halaman utama Cinevra](./assets/images/image.png)
+![Tampilan utama Cinevra](./assets/images/image.png)
 
-## Yang bisa dilakukan
+## Tentang proyek
 
-- Melihat film dan serial TV yang sedang populer
-- Membuka halaman detail untuk melihat sinopsis, pemeran, genre, judul serupa, dan trailer
-- Menambahkan atau menghapus judul dari watchlist
-- Menyaring judul berdasarkan genre, tahun, dan urutan
-- Membuka tampilan yang nyaman di layar desktop maupun ponsel
+Cinevra dirancang untuk membantu kamu:
 
-## Teknologi
+- Menemukan film dan series yang sedang populer
+- Melihat detail sinopsis, trailer, cast, genre, dan judul serupa
+- Menyimpan judul favorit ke watchlist
+- Membandingkan dan memfilter katalog berdasarkan genre, tahun, negara, serta platform streaming
+- Menyimpan aktivitas personal seperti rating, catatan, riwayat menonton, dan progress episode
+
+## Fitur utama
+
+- Katalog film dan TV populer
+- Halaman detail lengkap dengan poster, overview, trailer, cast, dan rekomendasi
+- Watchlist berbasis browser dengan `localStorage`
+- Filter multi-kriteria: genre, tahun, negara, dan platform streaming
+- My Space untuk:
+  - backup & restore data library
+  - statistik pribadi
+  - rekomendasi "For You"
+- Dukungan tampilan desktop dan mobile
+
+## Teknologi yang dipakai
 
 - HTML5
-- CSS3 dengan Flexbox, Grid, dan custom properties
-- JavaScript ES6
-- TMDB API untuk data film dan serial TV
-- localStorage untuk menyimpan watchlist
+- CSS3 (Flexbox, Grid, custom properties)
+- JavaScript ES6+
+- TMDB API
+- localStorage untuk data lokal pengguna
 
-## Menjalankan proyek
+## Persiapan cepat
 
-1. Buat API key dari akun TMDB
-2. Salin `js/api.example.js` menjadi `js/api.js`
-3. Ganti nilai `TMDB_API_KEY` di dalam `js/api.js` dengan API key milikmu
-4. Jalankan proyek melalui local server
+Ikuti langkah berikut untuk menjalankan proyek di lingkungan lokal.
 
-Kamu bisa memakai ekstensi Live Server di VS Code atau menjalankan perintah berikut bila Python sudah tersedia
+1. Buat API key dari [The Movie Database](https://www.themoviedb.org/)
+2. Salin file contoh berikut:
 
-```powershell
+```bash
+cp js/config.example.js js/config.js
+```
+
+3. Buka `js/config.js` lalu isi nilai `TMDB_API_KEY` dengan API key yang kamu miliki
+4. Jalankan server lokal
+
+```bash
 python -m http.server 5500
 ```
 
-Setelah itu buka `index.html` melalui alamat local server yang dibuat.
+5. Buka browser ke alamat berikut:
+
+```text
+http://localhost:5500
+```
+
+## Deployment
+
+Untuk deploy ke Netlify, Vercel, atau hosting lain, set environment variable berikut:
+
+```bash
+TMDB_API_KEY=your_tmdb_api_key_here
+```
+
+Saat proses build berjalan, script `scripts/generate-config.js` akan otomatis menulis isi `js/config.js` berdasarkan environment variable tersebut.
+
+Gunakan `npm run build` sebagai build command di pengaturan hosting.
 
 ## Struktur proyek
 
 ```text
-Cinevra
-├── assets
-│   └── images
-├── css
+cinevra/
+├── assets/
+│   └── images/
+├── css/
 │   ├── style.css
 │   ├── home.css
 │   ├── movies.css
 │   ├── search.css
 │   ├── detail.css
 │   └── watchlist.css
-├── js
-│   ├── api.example.js
+├── js/
+│   ├── config.example.js
+│   ├── config.js
 │   ├── main.js
 │   ├── home.js
 │   ├── movies.js
 │   ├── tv-shows.js
 │   ├── search.js
 │   ├── detail.js
-│   └── watchlist.js
+│   ├── watchlist.js
+│   ├── library.js
+│   ├── my-space.js
+│   └── personal.js
+├── scripts/
+│   ├── generate-config.js
+│   ├── test-personal.js
+│   ├── test-personal-ui.js
+│   ├── test-streaming.js
+│   ├── test-streaming-ui.js
+│   ├── test-library.js
+│   └── test-library-browser.js
 ├── index.html
 ├── movies.html
 ├── tv-shows.html
 ├── search.html
 ├── detail.html
-└── watchlist.html
+├── watchlist.html
+├── my-space.html
+├── person.html
+├── package.json
+├── README.md
+├── .gitignore
+└── ...
 ```
 
 ## Catatan penting
 
-File `js/api.js` sengaja tidak masuk ke Git karena berisi API key pribadi. Gunakan `js/api.example.js` sebagai template saat menyiapkan proyek di perangkat baru.
+- File `js/config.js` tidak disimpan di GitHub karena berisi API key pribadi
+- Gunakan `js/config.example.js` sebagai template saat setup awal
+- API key digunakan oleh aplikasi di browser. Batasi penggunaannya melalui pengaturan key TMDB dan jangan gunakan secret server-side di aplikasi client-side.
+- Data film dan serial TV berasal dari TMDB
+- Proyek ini dibuat untuk kebutuhan belajar dan eksplorasi frontend, serta tidak berafiliasi secara resmi dengan TMDB
 
-Data film dan serial TV disediakan oleh The Movie Database. Cinevra adalah proyek pribadi dan tidak berafiliasi dengan TMDB.
+## Fitur personal library
+
+Cinevra juga memiliki fitur personal yang cukup lengkap di halaman My Space:
+
+- Backup & Restore data library ke file JSON
+- Rating pribadi dari 1 sampai 10
+- Catatan dan tanggal menonton
+- Progress episode untuk serial TV
+- Statistik film dan acara yang sudah ditonton
+- Rekomendasi yang disesuaikan dengan preferensi pengguna
+
+## Testing
+
+Beberapa script pengujian yang tersedia:
+
+```bash
+node scripts/test-personal.js
+node scripts/test-personal-ui.js
+node scripts/test-streaming.js
+node scripts/test-streaming-ui.js
+node scripts/test-library.js
+```
+
+Untuk pengecekan browser tertentu, tersedia juga:
+
+```bash
+node scripts/test-library-browser.js
+```
 
 ## Pembuat
 
-Dibuat oleh Rafif Shula Syandana untuk proyek pembelajaran Pemrograman Web.
-## Rating pribadi, episode, dan platform streaming
+Dibuat oleh Rafif Shula Syandana untuk proyek pembelajaran web dan eksplorasi pengalaman menonton secara personal.
 
-Halaman detail bisa menyimpan rating pribadi dari 1 sampai 10, tanggal menonton, dan catatan singkat. Detail TV juga punya centang per episode, tombol untuk menandai satu season, dan progres keseluruhan season reguler. Episode spesial tidak dihitung. Data disimpan di localStorage browser tanpa akun dan akan hilang jika data browser dihapus.
+## Lisensi
 
-Katalog Movies dan TV Shows punya filter negara dan platform streaming. Negara awal pada katalog biasa adalah Indonesia. Pilih All countries untuk melihat katalog tanpa batasan streaming. Pilihan tersimpan di URL dan bisa digabung dengan genre, tahun, urutan, serta Load More. Hasil mencakup streaming berlangganan, gratis, dan dengan iklan. Memilih filter streaming dari kategori akan membuka katalog umum. Kosongkan pencarian judul untuk memakai filter streaming. Ketersediaan berasal dari TMDB dan JustWatch dan bisa berubah.
-
-Jalankan pemeriksaan dengan `node scripts/test-personal.js`, `node scripts/test-personal-ui.js`, `node scripts/test-streaming.js`, dan `node scripts/test-streaming-ui.js`.
-
-Parameter streaming mengikuti [dokumentasi Discover TMDB](https://developer.themoviedb.org/reference/discover-movie). Episode dimuat lewat [endpoint detail season](https://developer.themoviedb.org/reference/tv-season-details).
-
-## My Space
-
-Buka My Space dari navbar untuk memakai tiga fitur personal berikut.
-
-- Backup & Restore mengunduh JSON berisi watchlist, custom Lists, tanda ditonton, rating pribadi, tanggal menonton, catatan dan progres episode. File impor maksimal 2 MB, divalidasi dan ditampilkan ringkasannya sebelum pengguna mengonfirmasi penggantian seluruh library. Download backup lama sebelum restore. API settings dan riwayat browsing tidak disertakan.
-- My Stats menghitung film unik yang ditandai ditonton di Lists atau punya tanggal menonton. Rata-rata memakai rating pribadi film dan TV. Genre favorit dihitung dari film ditonton dengan detail TMDB, sementara aktivitas 12 bulan memakai tanggal menonton film dan TV. Tanda episode tanpa tanggal tidak masuk aktivitas bulanan.
-- For You mengambil rekomendasi dari maksimal enam judul yang diberi rating pribadi minimal 8/10 atau disimpan di Lists, dengan prioritas rating tinggi. Judul tersimpan yang diberi rating lebih rendah tidak dipakai sebagai favorit. Hasil digabung tanpa duplikat, dengan alasan rekomendasi, serta mengecualikan judul tersimpan dan yang sudah diberi rating, tanggal menonton atau progres episode.
-
-Backup dan angka statistik lokal tidak memerlukan internet. Genre favorit dan For You memerlukan konfigurasi TMDB serta koneksi internet. Request yang gagal diberi pesan dan tombol untuk mencoba lagi. Catatan pribadi ikut masuk file backup, jadi simpan file itu di tempat privat.
-
-Jalankan `node scripts/test-library.js` untuk validasi backup, rollback storage, statistik dan sumber rekomendasi. Pengujian Chrome terisolasi tersedia lewat `node scripts/test-library-browser.js` bila Playwright tersedia di lingkungan dan Chrome terpasang. Tidak ada dependency aplikasi baru. Pengujian browser memakai data TMDB tiruan untuk memeriksa interaksi, kondisi gagal dan tata letak 320, 768, 1024 dan 1440 piksel.
-
-For You memakai endpoint resmi [movie recommendations](https://developer.themoviedb.org/reference/movie-recommendations) dan [TV recommendations](https://developer.themoviedb.org/reference/tv-series-recommendations) melalui helper di `js/api.js`.
+Proyek ini dibuat untuk kebutuhan belajar dan penggunaan pribadi. Silakan sesuaikan dan modifikasi sesuai kebutuhanmu.
