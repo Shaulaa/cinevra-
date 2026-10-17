@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   bindTabs();
   bindControls();
   bindListActions();
+  bindShareButton();
 });
 
 function isDefaultList() {
@@ -150,6 +151,24 @@ function bindListActions() {
         showToast('List restored');
       },
     });
+  });
+}
+
+/**
+ * Tombol Share di header untuk berbagi watchlist atau custom list.
+ */
+function bindShareButton() {
+  const shareBtn = document.getElementById('shareListBtn');
+  if (!shareBtn) return;
+
+  shareBtn.addEventListener('click', () => {
+    if (isDefaultList()) {
+      // Watchlist: pass 'watchlist' as the listId
+      openShareModal('watchlist');
+    } else {
+      // Custom list: pass the list ID
+      openShareModal(activeListId);
+    }
   });
 }
 

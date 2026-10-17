@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Space - Cinevra</title>
-  <meta name="description" content="Your movie stats, personal recommendations and browser data backups.">
+  <title>My Lists - Cinevra</title>
+  <meta name="description" content="Create and manage custom movie and TV show lists on Cinevra, organize your favorites by theme, and share your collections.">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Cinevra">
-  <meta property="og:title" content="My Space - Cinevra">
-  <meta property="og:description" content="Your movie stats, personal recommendations and browser data backups.">
+  <meta property="og:title" content="My Lists - Cinevra">
+  <meta property="og:description" content="Create and manage custom movie and TV show lists on Cinevra, organize your favorites by theme, and share your collections.">
   <meta property="og:image" content="assets/images/image.png">
 
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
@@ -100,55 +100,74 @@
 
   <div class="navbar__backdrop" id="navBackdrop"></div>
 
-  <main class="container space-main">
-    <h1 class="space-title">My Space</h1>
-    <p class="space-intro">Your watching habits, your next favorites, your data.</p>
-    <nav class="space-nav" aria-label="My Space sections">
-      <a href="#stats" data-space-link>My Stats</a>
-      <a href="#for-you" data-space-link>For You</a>
-      <a href="#backup" data-space-link>Backup &amp; Restore</a>
-    </nav>
-    <section id="stats" class="space-panel" data-space-panel aria-labelledby="statsTitle">
-      <h2 id="statsTitle">My Stats</h2>
-      <div class="stats-summary">
-        <article><h3>Movies watched</h3><p class="stat-value" id="moviesWatched">0</p><p class="space-note">Marked watched or given a watch date</p></article>
-        <article><h3>Average personal rating</h3><p class="stat-value" id="averageRating">No ratings yet</p><p class="space-note" id="ratingCount"></p></article>
-        <article><h3>Episodes watched</h3><p class="stat-value" id="episodesWatched">0</p><p class="space-note">Tracked regular episodes</p></article>
-        <article><h3>Saved titles</h3><p class="stat-value" id="savedTitles">0</p><p class="space-note">Unique movies and TV across Lists</p></article>
+  <main class="container">
+
+    <!-- ================= MY LISTS HEADER ================= -->
+    <div class="my-lists-head" id="myListsHead">
+      <div>
+        <h1 class="page-title">My Lists</h1>
+        <p class="page-subtitle">Organize your favorites by theme</p>
       </div>
-      <div class="stats-detail">
-        <article><h3>Favorite genres</h3><ul id="favoriteGenres" class="genre-list"></ul><p class="space-note">Genres you watch most. Genre information needs an internet connection.</p></article>
-        <article><h3>Monthly activity</h3><ol id="monthlyActivity" class="monthly-list"></ol><p class="space-note">Titles with a watch date in the last 12 months. Undated watched titles and episode checkmarks do not count here.</p></article>
+      <button class="btn btn--primary" id="createListBtn" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Create New List
+      </button>
+    </div>
+
+    <!-- ================= LIST DETAIL HEADER (hidden by default) ================= -->
+    <div class="list-detail-head" id="listDetailHead" hidden>
+      <div>
+        <h1 class="page-title" id="listDetailTitle"></h1>
+        <p class="page-subtitle" id="listDetailMeta"></p>
       </div>
-      <p id="statsStatus" class="space-status" role="status"></p>
-      <button id="statsRetry" type="button" class="btn btn--outline">Retry stats</button>
-    </section>
-    <section id="for-you" class="space-panel" data-space-panel aria-labelledby="forYouTitle" hidden>
-      <h2 id="forYouTitle">For You</h2>
-      <p class="space-note">Discover movies and TV from titles you saved or personally rated 8/10 or higher. Lower personal ratings are not used as favorites.</p>
-      <p id="recommendationStatus" class="space-status" role="status"></p>
-      <div class="space-actions"><button id="recommendationRetry" type="button" class="btn btn--outline">Refresh recommendations</button><a href="movies.html" class="btn btn--outline">Explore movies</a></div>
-      <div id="recommendationGrid" class="card-grid space-recommendations"></div>
-    </section>
-    <section id="backup" class="space-panel" data-space-panel aria-labelledby="backupTitle" hidden>
-      <h2 id="backupTitle">Backup &amp; Restore</h2>
-      <div class="backup-box">
-        <h3>Take your library with you</h3>
-        <p class="space-note">Download your watchlist, custom Lists, watched marks, personal ratings, watch dates, notes and episode progress as a JSON file. No account needed.</p>
-        <button id="exportBackup" type="button" class="btn btn--primary">Download backup</button>
+      <div class="list-detail-head__actions">
+        <button class="btn btn--outline" id="shareListBtn" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="18" cy="5" r="3"></circle>
+            <circle cx="6" cy="12" r="3"></circle>
+            <circle cx="18" cy="19" r="3"></circle>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+          </svg>
+          Share
+        </button>
+        <button class="btn btn--outline" id="editListBtn" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+          </svg>
+          Edit
+        </button>
+        <button class="btn btn--ghost" id="backToListsBtn" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          Back
+        </button>
       </div>
-      <div class="backup-box">
-        <h3>Restore a library</h3>
-        <p class="space-note">Choose a Cinevra JSON backup up to 2 MB. Restore replaces the current library on this browser. Download a backup first if you want to keep it.</p>
-        <label for="importBackup">Choose backup file</label>
-        <input id="importBackup" type="file" accept=".json,application/json" aria-describedby="backupPreview">
-        <p id="backupPreview" class="space-note"></p>
-        <label class="backup-confirm"><input id="restoreConfirm" type="checkbox" disabled><span>I understand this replaces my current Lists, ratings, notes and episode progress.</span></label>
-        <button id="restoreBackup" type="button" class="btn btn--primary" disabled>Replace library and restore</button>
-      </div>
-      <p id="backupStatus" class="space-status" role="status"></p>
-      <p class="space-note">Your notes stay in the downloaded file. Keep the backup somewhere private. API settings and browsing history are not included.</p>
-    </section>
+    </div>
+
+    <!-- ================= LISTS GRID ================= -->
+    <div class="lists-grid" id="listsGrid"></div>
+
+    <!-- ================= LIST DETAIL GRID (hidden by default) ================= -->
+    <div class="card-grid" id="listDetailGrid" hidden></div>
+
+    <!-- ================= EMPTY STATE ================= -->
+    <div class="state-block" id="emptyState" hidden>
+      <svg class="state-block__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+        <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+        <path d="M9 12h6M9 16h6"></path>
+      </svg>
+      <h2 class="state-block__title">No lists yet</h2>
+      <p class="state-block__desc">Create your first list to organize movies and shows by theme, mood, or occasion.</p>
+      <button class="btn btn--primary" id="emptyCreateBtn" type="button">Create List</button>
+    </div>
+
   </main>
 
   <footer class="site-footer">
@@ -162,6 +181,7 @@
   <script src="js/api.js"></script>
   <script src="js/main.js"></script>
   <script src="js/library.js"></script>
+  <script src="js/image-export.js"></script>
   <script src="js/my-space.js"></script>
 </body>
 </html>

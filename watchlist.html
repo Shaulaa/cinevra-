@@ -107,9 +107,15 @@
         <h1 class="watchlist-head__title" id="watchlistTitle">My Watchlist</h1>
         <p class="watchlist-head__subtitle" id="watchlistSubtitle">Movies and TV shows you saved</p>
       </div>
-      <div class="watchlist-head__actions" id="listActions" hidden>
-        <button class="btn btn--ghost" id="renameListBtn" type="button">Rename</button>
-        <button class="btn btn--ghost" id="deleteListBtn" type="button">Delete list</button>
+      <div class="watchlist-head__actions">
+        <button class="btn btn--ghost" id="shareListBtn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          Share
+        </button>
+        <div id="listActions" hidden>
+          <button class="btn btn--ghost" id="renameListBtn" type="button">Rename</button>
+          <button class="btn btn--ghost" id="deleteListBtn" type="button">Delete list</button>
+        </div>
       </div>
     </div>
 
@@ -184,6 +190,8 @@
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/library.js"></script>
+  <script src="js/image-export.js"></script>
   <script src="js/watchlist.js"></script>
 </body>
 </html>

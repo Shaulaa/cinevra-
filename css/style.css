@@ -1651,3 +1651,244 @@ img.img-fallback {
     gap: 14px;
   }
 }
+
+
+/* ---------- SHARE MODAL ---------- */
+.dialog--share {
+  width: min(92vw, 560px);
+}
+
+.share-section {
+  margin-bottom: var(--space-6);
+}
+
+.share-section__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.share-url {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.share-url__input {
+  flex: 1;
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  min-width: 0;
+}
+
+.share-url__input:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+.share-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+}
+
+.share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.share-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--accent-gold);
+  transform: translateY(-2px);
+}
+
+.share-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.share-btn svg {
+  flex-shrink: 0;
+}
+
+.share-btn--twitter {
+  border-color: #1DA1F2;
+}
+
+.share-btn--twitter:hover:not(:disabled) {
+  background: rgba(29, 161, 242, 0.1);
+  border-color: #1DA1F2;
+}
+
+.share-btn--facebook {
+  border-color: #1877F2;
+}
+
+.share-btn--facebook:hover:not(:disabled) {
+  background: rgba(24, 119, 242, 0.1);
+  border-color: #1877F2;
+}
+
+.share-btn--whatsapp {
+  border-color: #25D366;
+}
+
+.share-btn--whatsapp:hover:not(:disabled) {
+  background: rgba(37, 211, 102, 0.1);
+  border-color: #25D366;
+}
+
+.share-btn--native {
+  border-color: var(--accent-gold);
+}
+
+.share-btn--native:hover:not(:disabled) {
+  background: rgba(227, 179, 65, 0.1);
+  border-color: var(--accent-gold);
+}
+
+@media (max-width: 640px) {
+  .share-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .share-url {
+    flex-direction: column;
+  }
+
+  .share-url button {
+    width: 100%;
+  }
+}
+
+/* ================= IMAGE EXPORT DIALOG ================= */
+.dialog--image-export .dialog__body {
+  max-width: 600px;
+}
+
+.image-export-templates {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.template-btn {
+  background: var(--card-bg);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.template-btn:hover {
+  background: var(--card-bg-hover);
+  border-color: var(--border-color);
+}
+
+.template-btn.is-active {
+  border-color: var(--accent-color);
+  background: rgba(229, 9, 20, 0.1);
+}
+
+.template-btn__icon {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.template-btn__name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+}
+
+.template-btn__desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .image-export-templates {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ================= MOBILE RESPONSIVE FIXES ================= */
+@media (max-width: 360px) {
+  .dialog--share {
+    margin: 10px;
+    padding: 16px;
+  }
+  
+  .share-url__input {
+    min-width: 0;
+    font-size: 13px;
+  }
+  
+  .share-btn {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+}
+
+/* Safe area insets for iOS notch/Dynamic Island */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .navbar {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  .site-footer {
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Prevent zoom on input focus (iOS) */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px; /* Prevents iOS zoom */
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

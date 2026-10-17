@@ -1,157 +1,389 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const status = document.getElementById('backupStatus');
-  const preview = document.getElementById('backupPreview');
-  const confirm = document.getElementById('restoreConfirm');
-  const restore = document.getElementById('restoreBackup');
-  let pending = null;
-  let fileVersion = 0;
-  let viewVersion = 0;
-  const resetImport = () => { pending = null; preview.textContent = ''; confirm.checked = false; confirm.disabled = true; restore.disabled = true; };
-  document.getElementById('exportBackup').addEventListener('click', () => {
-    try {
-      const blob = new Blob([JSON.stringify(createLibraryBackup(), null, 2)], { type: 'application/json' });
-      if (blob.size > BACKUP_MAX_BYTES) throw Error('Backup exceeds the 2 MB import limit. Reduce your Lists before exporting.');
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `cinevra-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.append(link); link.click(); link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      status.textContent = 'Backup downloaded. Keep it safe, it includes your private notes.';
-    } catch (error) { status.textContent = `Could not export. ${error.message}`; }
-  });
-  document.getElementById('importBackup').addEventListener('change', async event => {
-    const version = ++fileVersion;
-    resetImport(); status.textContent = '';
-    const file = event.target.files[0];
-    if (!file) return;
-    try {
-      if (file.size > BACKUP_MAX_BYTES) throw Error('Choose a backup smaller than 2 MB.');
-      const backup = validateLibraryBackup(JSON.parse(await file.text()));
-      if (version !== fileVersion) return;
-      pending = backup;
-      const data = backup.data;
-      preview.textContent = `${data.watchlist.length} watchlist titles, ${data.lists.length} custom lists, ${Object.keys(data.personal).length} personal records. This replaces your current Lists, ratings, notes and episode progress.`;
-      confirm.disabled = false;
-      status.textContent = 'File validated. Export your current data before restoring if you want to keep a copy.';
-    } catch (error) { if (version === fileVersion) status.textContent = `Could not import. ${error.message}`; }
-  });
-  confirm.addEventListener('change', () => { restore.disabled = !pending || !confirm.checked; });
-  restore.addEventListener('click', () => {
-    if (!pending || !confirm.checked) return;
-    try {
-      restoreLibrary(pending); resetImport();
-      document.getElementById('importBackup').value = '';
-      status.textContent = 'Restored successfully. Your Lists, ratings, notes and episode progress are ready.';
-      window.dispatchEvent(new CustomEvent('watchlist:change'));
-      window.dispatchEvent(new CustomEvent('lists:change'));
-    } catch (error) { status.textContent = error.message; }
-  });
-  const showView = () => {
-    const view = ['stats', 'for-you', 'backup'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'stats';
-    const version = ++viewVersion;
-    document.querySelectorAll('[data-space-panel]').forEach(panel => { panel.hidden = panel.id !== view; });
-    document.querySelectorAll('[data-space-link]').forEach(link => {
-      if (link.hash === `#${view}`) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
-    });
-    if (view === 'stats') renderMyStats(() => version === viewVersion);
-    if (view === 'for-you') renderForYou(() => version === viewVersion);
-  };
-  document.getElementById('statsRetry').addEventListener('click', showView);
-  document.getElementById('recommendationRetry').addEventListener('click', showView);
-  window.addEventListener('hashchange', showView);
-  window.addEventListener('storage', event => { if (LIBRARY_KEYS.includes(event.key) || event.key === null) { ++fileVersion; resetImport(); showView(); } });
-  window.addEventListener('watchlist:change', () => { if (location.hash === '#for-you') showView(); });
-  showView();
-});
+/* =========================================================
+  CINEVRA - js/my-space.js
+   My Lists page: create, edit, delete custom lists
+   ========================================================= */
 
-async function renderMyStats(current) {
-  const status = document.getElementById('statsStatus');
-  const genres = document.getElementById('favoriteGenres');
-  const months = document.getElementById('monthlyActivity');
-  genres.replaceChildren(); months.replaceChildren();
-  let stats;
-  try {
-    stats = calculateLibraryStats(readLibrary());
-    document.getElementById('moviesWatched').textContent = stats.movies;
-    document.getElementById('averageRating').textContent = stats.average === null ? 'No ratings yet' : `${stats.average.toFixed(1)} / 10`;
-    document.getElementById('ratingCount').textContent = `${stats.rated} personal ratings across movies and TV`;
-    document.getElementById('episodesWatched').textContent = stats.episodes;
-    document.getElementById('savedTitles').textContent = stats.saved;
-    stats.months.forEach(month => {
-      const row = document.createElement('li');
-      const label = document.createElement('span');
-      label.textContent = new Date(`${month.key}-01T12:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      const bar = document.createElement('meter');
-      bar.min = 0; bar.max = Math.max(1, ...stats.months.map(item => item.count)); bar.value = month.count;
-      bar.setAttribute('aria-label', `${label.textContent}, ${month.count} titles watched`);
-      const count = document.createElement('span'); count.textContent = month.count;
-      row.append(label, bar, count); months.append(row);
-    });
-  } catch {
-    ['moviesWatched', 'averageRating', 'episodesWatched', 'savedTitles'].forEach(id => { document.getElementById(id).textContent = 'Unavailable'; });
-    document.getElementById('ratingCount').textContent = '';
-    status.textContent = 'Could not read your browser data. Restore a valid backup or retry when storage is available.';
+// DOM references
+let listsGrid, listDetailGrid, emptyState;
+let myListsHead, listDetailHead;
+let createListBtn, emptyCreateBtn;
+let shareListBtn, editListBtn, backToListsBtn;
+let listDetailTitle, listDetailMeta;
+let currentView = 'grid'; // 'grid' or 'detail'
+let currentListId = null;
+
+/**
+ * Init: setup DOM refs dan event listeners
+ */
+function init() {
+  listsGrid = document.getElementById('listsGrid');
+  listDetailGrid = document.getElementById('listDetailGrid');
+  emptyState = document.getElementById('emptyState');
+  myListsHead = document.getElementById('myListsHead');
+  listDetailHead = document.getElementById('listDetailHead');
+  createListBtn = document.getElementById('createListBtn');
+  emptyCreateBtn = document.getElementById('emptyCreateBtn');
+  shareListBtn = document.getElementById('shareListBtn');
+  editListBtn = document.getElementById('editListBtn');
+  backToListsBtn = document.getElementById('backToListsBtn');
+  listDetailTitle = document.getElementById('listDetailTitle');
+  listDetailMeta = document.getElementById('listDetailMeta');
+
+  // check URL parameter untuk list detail
+  const params = new URLSearchParams(window.location.search);
+  const listId = params.get('list');
+
+  if (listId) {
+    renderListDetail(listId);
+  } else {
+    renderListsGrid();
+  }
+
+  // event listeners
+  if (createListBtn) createListBtn.addEventListener('click', handleCreateList);
+  if (emptyCreateBtn) emptyCreateBtn.addEventListener('click', handleCreateList);
+  if (shareListBtn) shareListBtn.addEventListener('click', () => handleShareList(currentListId));
+  if (editListBtn) editListBtn.addEventListener('click', () => handleEditList(currentListId));
+  if (backToListsBtn) backToListsBtn.addEventListener('click', () => {
+    window.history.pushState(null, '', 'my-space.html');
+    renderListsGrid();
+  });
+
+  // auto-refresh saat lists berubah
+  window.addEventListener('lists:change', () => {
+    if (currentView === 'grid') {
+      renderListsGrid();
+    } else if (currentView === 'detail' && currentListId) {
+      renderListDetail(currentListId);
+    }
+  });
+}
+
+/**
+ * Render grid view dengan semua lists
+ */
+function renderListsGrid() {
+  currentView = 'grid';
+  currentListId = null;
+
+  // show/hide sections
+  if (myListsHead) myListsHead.hidden = false;
+  if (listDetailHead) listDetailHead.hidden = true;
+  if (listsGrid) listsGrid.hidden = false;
+  if (listDetailGrid) listDetailGrid.hidden = true;
+
+  const lists = getCustomLists();
+
+  if (lists.length === 0) {
+    if (listsGrid) listsGrid.innerHTML = '';
+    if (emptyState) emptyState.hidden = false;
     return;
   }
-  const movies = [...stats.watched].filter(key => key.startsWith('movie:'));
-  if (!movies.length) { status.textContent = 'Mark a movie watched in Lists or add a watch date on its detail page to start your stats.'; return; }
-  status.textContent = 'Loading genres for your watched movies...';
-  const counts = new Map();
-  let failed = 0;
-  // Batasi request bersamaan supaya library besar tetap ringan.
-  for (let offset = 0; offset < movies.length; offset += 6) {
-    if (!current()) return;
-    const results = await Promise.allSettled(movies.slice(offset, offset + 6).map(key => fetchMovieDetails(key.split(':')[1])));
-    if (!current()) return;
-    results.forEach(result => {
-      if (result.status === 'rejected') { failed++; return; }
-      new Set((result.value.genres || []).map(genre => genre.name)).forEach(name => { counts.set(name, (counts.get(name) || 0) + 1); });
-    });
-  }
-  [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 5).forEach(([name, count]) => {
-    const row = document.createElement('li'); row.textContent = `${name} · ${count} movies`; genres.append(row);
+
+  if (emptyState) emptyState.hidden = true;
+  if (!listsGrid) return;
+
+  listsGrid.innerHTML = '';
+  lists.forEach(list => {
+    const card = createListCard(list);
+    listsGrid.appendChild(card);
   });
-  status.textContent = failed ? `Genres loaded for ${movies.length - failed} of ${movies.length} movies. Some requests failed. Use Retry to try again.` : counts.size ? 'Favorite genres are based on your watched movies.' : 'No genre information available for these movies.';
 }
 
-async function renderForYou(current) {
-  const status = document.getElementById('recommendationStatus');
-  const grid = document.getElementById('recommendationGrid');
-  grid.replaceChildren();
-  grid.setAttribute('aria-busy', 'false');
-  let data;
-  try { data = readLibrary(); } catch { status.textContent = 'Could not read your browser data. Restore a valid backup or retry.'; return; }
-  const seeds = getRecommendationSeeds(data);
-  if (!seeds.length) { status.textContent = 'Save a title to Lists or give a personal rating of 8 or higher to get recommendations.'; return; }
-  status.textContent = 'Finding recommendations from your favorites...';
-  grid.setAttribute('aria-busy', 'true');
-  const results = await Promise.allSettled(seeds.map(seed => seed.type === 'movie' ? fetchRecommendedMovies(seed.id) : fetchRecommendedTV(seed.id)));
-  if (!current()) return;
-  grid.setAttribute('aria-busy', 'false');
-  const excluded = new Set([...libraryItems(data).keys(), ...Object.keys(data.personal).filter(key => {
-    const record = data.personal[key]; return record.rating !== '' || record.watchedOn || record.episodes.length;
-  })]);
-  const candidates = new Map();
-  let failed = 0;
-  results.forEach((result, index) => {
-    if (result.status === 'rejected') { failed++; return; }
-    const seed = seeds[index];
-    (result.value.results || []).forEach((item, rank) => {
-      const key = `${seed.type}:${item.id}`;
-      if (excluded.has(key) || !Number.isSafeInteger(item.id) || item.adult === true) return;
-      const weight = (seed.reason === 'high rating' ? 2 : 1) / (rank + 1);
-      const existing = candidates.get(key);
-      if (existing) existing.score += weight;
-      else candidates.set(key, { score: weight, item, seed });
+/**
+ * Membuat card untuk satu list
+ */
+function createListCard(list) {
+  const card = document.createElement('article');
+  card.className = 'list-card';
+  card.setAttribute('data-list-id', list.id);
+
+  // preview posters
+  const preview = document.createElement('div');
+  preview.className = 'list-card__preview';
+
+  if (list.items.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'list-card__empty';
+    empty.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+        <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+      </svg>
+      <span>Empty list</span>
+    `;
+    preview.appendChild(empty);
+  } else {
+    // ambil max 4 poster
+    const posters = list.items.slice(0, 4);
+    posters.forEach(item => {
+      const img = document.createElement('img');
+      img.src = getImageUrl(item.posterPath, 'posterSmall');
+      img.alt = item.title;
+      attachImageFallback(img);
+      preview.appendChild(img);
     });
+  }
+
+  card.appendChild(preview);
+
+  // info
+  const info = document.createElement('div');
+  info.className = 'list-card__info';
+
+  const name = document.createElement('h3');
+  name.className = 'list-card__name';
+  name.textContent = list.name;
+
+  const meta = document.createElement('p');
+  meta.className = 'list-card__meta';
+  const itemCount = list.items.length;
+  const itemText = itemCount === 1 ? 'item' : 'items';
+  meta.textContent = `${itemCount} ${itemText}`;
+
+  info.appendChild(name);
+  info.appendChild(meta);
+  card.appendChild(info);
+
+  // actions
+  const actions = document.createElement('div');
+  actions.className = 'list-card__actions';
+
+  const shareBtn = document.createElement('button');
+  shareBtn.className = 'btn-icon';
+  shareBtn.setAttribute('aria-label', `Share ${list.name}`);
+  shareBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="18" cy="5" r="3"></circle>
+    <circle cx="6" cy="12" r="3"></circle>
+    <circle cx="18" cy="19" r="3"></circle>
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+  </svg>`;
+  shareBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    handleShareList(list.id);
   });
-  [...candidates.values()].sort((a, b) => b.score - a.score).slice(0, 18).forEach(({ item, seed }) => {
-    const wrapper = document.createElement('div');
-    const card = createMovieCard({ id: item.id, type: seed.type, title: item.title || item.name || 'Untitled', posterPath: item.poster_path, rating: item.vote_average, year: formatYear(item.release_date || item.first_air_date) });
-    const reason = document.createElement('p'); reason.className = 'recommendation-reason';
-    reason.textContent = `Because you ${seed.reason === 'high rating' ? 'rated highly' : 'saved'} ${seed.title || `a ${seed.type === 'movie' ? 'movie' : 'TV show'} (#${seed.id})`}`;
-    wrapper.append(card, reason); grid.append(wrapper);
+
+  const editBtn = document.createElement('button');
+  editBtn.className = 'btn-icon';
+  editBtn.setAttribute('aria-label', `Edit ${list.name}`);
+  editBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+  </svg>`;
+  editBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    handleEditList(list.id);
   });
-  status.textContent = failed ? `Some recommendations could not be loaded (${failed} of ${seeds.length} sources). Use Refresh to retry.` : candidates.size ? 'Based on up to six favorites. Saved and previously rated or watched titles are excluded.' : 'No new recommendations available for these favorites. Try saving more titles.';
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'btn-icon';
+  deleteBtn.setAttribute('aria-label', `Delete ${list.name}`);
+  deleteBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"></path>
+  </svg>`;
+  deleteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    handleDeleteList(list.id);
+  });
+
+  actions.appendChild(shareBtn);
+  actions.appendChild(editBtn);
+  actions.appendChild(deleteBtn);
+  card.appendChild(actions);
+
+  // click card untuk buka detail
+  card.addEventListener('click', (e) => {
+    if (!e.target.closest('.list-card__actions')) {
+      window.history.pushState(null, '', `my-space.html?list=${list.id}`);
+      renderListDetail(list.id);
+    }
+  });
+
+  return card;
 }
+
+/**
+ * Render detail view untuk satu list
+ */
+async function renderListDetail(listId) {
+  const list = getCustomList(listId);
+  if (!list) {
+    // list tidak ditemukan, redirect ke grid
+    window.location.href = 'my-space.html';
+    return;
+  }
+
+  currentView = 'detail';
+  currentListId = listId;
+
+  // show/hide sections
+  if (myListsHead) myListsHead.hidden = true;
+  if (listDetailHead) listDetailHead.hidden = false;
+  if (listsGrid) listsGrid.hidden = true;
+  if (listDetailGrid) listDetailGrid.hidden = false;
+  if (emptyState) emptyState.hidden = true;
+
+  // update header
+  if (listDetailTitle) listDetailTitle.textContent = list.name;
+  if (listDetailMeta) {
+    const itemCount = list.items.length;
+    const itemText = itemCount === 1 ? 'item' : 'items';
+    listDetailMeta.textContent = `${itemCount} ${itemText}`;
+  }
+
+  if (!listDetailGrid) return;
+
+  // show loading
+  listDetailGrid.innerHTML = Array.from({ length: 8 }, () => createCardSkeleton()).map(s => s.outerHTML).join('');
+
+  // fetch movie data dari TMDB
+  const itemsWithData = await Promise.all(
+    list.items.map(async item => {
+      try {
+        const data = item.type === 'movie' 
+          ? await fetchMovieDetails(item.id)
+          : await fetchTVDetails(item.id);
+        return { ...item, ...data };
+      } catch (error) {
+        console.error(`Failed to fetch ${item.type} ${item.id}:`, error);
+        return item; // fallback ke data yang ada
+      }
+    })
+  );
+
+  // render cards
+  listDetailGrid.innerHTML = '';
+  itemsWithData.forEach(item => {
+    const card = createMovieCard(item);
+    
+    // tambahkan remove button
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'movie-card__watch-btn';
+    removeBtn.setAttribute('aria-label', `Remove ${item.title || item.name} from list`);
+    removeBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>`;
+    
+    removeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      removeFromCustomList(listId, item.id, item.type);
+      showToast('Dihapus dari daftar', 'Undo', () => {
+        addToCustomList(listId, item);
+      });
+    });
+
+    const posterWrap = card.querySelector('.movie-card__poster');
+    if (posterWrap) {
+      posterWrap.appendChild(removeBtn);
+    }
+
+    listDetailGrid.appendChild(card);
+  });
+
+  // empty state jika tidak ada items
+  if (itemsWithData.length === 0) {
+    const emptyMessage = document.createElement('div');
+    emptyMessage.className = 'state-block';
+    emptyMessage.style.gridColumn = '1 / -1';
+    emptyMessage.innerHTML = `
+      <svg class="state-block__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+        <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+      </svg>
+      <h2 class="state-block__title">This list is empty</h2>
+      <p class="state-block__desc">Add movies and shows from detail pages to fill this list.</p>
+    `;
+    listDetailGrid.appendChild(emptyMessage);
+  }
+}
+
+/**
+ * Handle create list
+ */
+function handleCreateList() {
+  openNameDialog({
+    title: 'Create New List',
+    confirmLabel: 'Create',
+    onSubmit: (name) => {
+      const result = createCustomList(name);
+      if (result.error) return result.error;
+      showToast(`Daftar "${result.list.name}" berhasil dibuat`);
+      return null; // success, close dialog
+    }
+  });
+}
+
+/**
+ * Handle edit list name
+ */
+function handleEditList(listId) {
+  const list = getCustomList(listId);
+  if (!list) return;
+
+  openNameDialog({
+    title: 'Rename List',
+    initial: list.name,
+    confirmLabel: 'Save',
+    onSubmit: (name) => {
+      const result = renameCustomList(listId, name);
+      if (result.error) return result.error;
+      showToast('Nama daftar berhasil diubah');
+      return null;
+    }
+  });
+}
+
+/**
+ * Handle delete list
+ */
+function handleDeleteList(listId) {
+  const list = getCustomList(listId);
+  if (!list) return;
+
+  if (!confirm(`Delete "${list.name}"? This cannot be undone.`)) return;
+
+  const snapshot = deleteCustomList(listId);
+  showToast(`Daftar "${list.name}" dihapus`, 'Undo', () => {
+    restoreCustomLists(snapshot);
+  });
+
+  // jika sedang di detail view list yang dihapus, redirect ke grid
+  if (currentListId === listId) {
+    window.history.pushState(null, '', 'my-space.html');
+    renderListsGrid();
+  }
+}
+
+/**
+ * Handle share list
+ */
+function handleShareList(listId) {
+  openShareModal(listId);
+}
+
+// Initialize saat page load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+// Handle browser back/forward
+window.addEventListener('popstate', () => {
+  const params = new URLSearchParams(window.location.search);
+  const listId = params.get('list');
+  if (listId) {
+    renderListDetail(listId);
+  } else {
+    renderListsGrid();
+  }
+});
+
+// Init navbar
+initNavbarToggle();
+initMobileSearchToggle();
+initNavbarSearch();
+initSurpriseMeButton();
+highlightActiveNavLink();

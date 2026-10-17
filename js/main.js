@@ -1352,6 +1352,87 @@ function openListPicker(item, onClose) {
   dialog.showModal();
 }
 
+/**
+ * Mendapatkan metadata list untuk preview dan display.
+ * @param {string} listId
+ * @returns {Object|null} - { itemCount, lastUpdated, isEmpty, previewPosters }
+ */
+function getListMetadata(listId) {
+  const list = getCustomList(listId);
+  if (!list) return null;
+
+  const itemCount = list.items.length;
+  const isEmpty = itemCount === 0;
+  
+  // ambil maksimal 4 poster untuk preview thumbnail
+  const previewPosters = list.items.slice(0, 4).map(item => item.posterPath).filter(Boolean);
+  
+  // timestamp terakhir ditambahkan item (atau created time jika list kosong)
+  const lastUpdated = list.items.length > 0 
+    ? list.items[0].addedAt || Date.now() 
+    : list.createdAt || Date.now();
+  
+  return { itemCount, lastUpdated, isEmpty, previewPosters };
+}
+
+/**
+ * Import list dari shared URL (membuat copy list baru di custom lists).
+ * @param {Object} listData - { name, items: [{ id, type, title, posterPath, rating, year }] }
+ * @returns {{list: Object}|{error: string}}
+ */
+function importSharedList(listData) {
+  if (!listData || !listData.name || !Array.isArray(listData.items)) {
+    return { error: 'Invalid list data.' };
+  }
+
+  let name = listData.name.trim();
+  
+  // validasi nama, tambahkan suffix jika duplicate
+  let attempt = 0;
+  let candidateName = name;
+  while (validateListName(candidateName) === 'You already have a list with that name.') {
+    attempt += 1;
+    candidateName = `${name} (${attempt + 1})`;
+    if (attempt > 50) return { error: 'Could not find an available name for this list.' };
+  }
+  
+  // cek limit
+  const error = validateListName(candidateName);
+  if (error && error.includes('up to')) {
+    return { error };
+  }
+  
+  // buat list baru
+  const result = createCustomList(candidateName);
+  if (result.error) return result;
+  
+  // tambahkan semua items
+  const lists = getCustomLists();
+  const list = lists.find(l => l.id === result.list.id);
+  if (list) {
+    list.items = [...listData.items];
+    saveCustomLists(lists);
+  }
+  
+  return { list: result.list, imported: true };
+}
+
+/**
+ * Mendapatkan statistik global tentang custom lists.
+ * @returns {Object} - { totalLists, totalItems, maxItemsInList, listsRemaining }
+ */
+function getListStats() {
+  const lists = getCustomLists();
+  const totalLists = lists.length;
+  const totalItems = lists.reduce((sum, list) => sum + list.items.length, 0);
+  const maxItemsInList = lists.length > 0 
+    ? Math.max(...lists.map(list => list.items.length))
+    : 0;
+  const listsRemaining = Math.max(0, LISTS_MAX - totalLists);
+  
+  return { totalLists, totalItems, maxItemsInList, listsRemaining };
+}
+
 /* =========================================================
    META TAGS (SEO / Open Graph)
    index.html, movies.html, dst sudah punya tag description & og

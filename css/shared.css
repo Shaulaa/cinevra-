@@ -1,0 +1,39 @@
+/* =========================================================
+   SHARED LIST VIEW
+   ========================================================= */
+
+.shared-header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto var(--space-8);
+}
+
+.shared-header .page-title {
+  margin-bottom: var(--space-3);
+}
+
+.shared-header .page-subtitle {
+  margin-bottom: var(--space-4);
+}
+
+.shared-description {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--space-5);
+}
+
+.shared-header .btn {
+  margin-top: var(--space-4);
+}
+
+@media (max-width: 640px) {
+  .shared-header {
+    text-align: left;
+    margin-bottom: var(--space-6);
+  }
+
+  .shared-header .btn {
+    width: 100%;
+  }
+}
