@@ -14,9 +14,9 @@
 // api.js sendiri TIDAK pernah menyimpan key secara langsung.
 const TMDB_API_KEY = (window.CINEVRA_CONFIG && window.CINEVRA_CONFIG.TMDB_API_KEY) || '';
 
-if (!TMDB_API_KEY || TMDB_API_KEY === 'MASUKKAN_TMDB_API_KEY_DI_SINI') {
+if (!TMDB_API_KEY || TMDB_API_KEY === "MASUKKAN_TMDB_API_KEY_DI_SINI") {
   console.warn(
-    'TMDB_API_KEY belum di-set. Copy js/config.example.js jadi js/config.js lalu isi API key kamu (lihat README.md).'
+    "TMDB_API_KEY belum di-set. Copy js/config.example.js jadi js/config.js lalu isi API key kamu (lihat README.md).",
   );
 }
 

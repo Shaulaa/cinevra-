@@ -1,16 +1,50 @@
+function normalizeDiaryItem(item) {
+  if (!item || typeof item.title !== 'string' || !item.title.trim()) return null;
+  return {
+    title: item.title.trim().slice(0, 300),
+    posterPath: typeof item.posterPath === 'string' && /^\/[a-zA-Z0-9_-]+\.(jpg|png|webp)$/i.test(item.posterPath) ? item.posterPath : null,
+    year: /^\d{4}$/.test(String(item.year || '')) ? String(item.year) : '',
+  };
+}
+
+function normalizePersonalRecord(record) {
+  return {
+    rating: Number.isInteger(record?.rating) && record.rating >= 1 && record.rating <= 10 ? record.rating : '',
+    watchedOn: typeof record?.watchedOn === 'string' ? record.watchedOn : '',
+    note: typeof record?.note === 'string' ? record.note.slice(0, 1000) : '',
+    episodes: Array.isArray(record?.episodes) ? [...new Set(record.episodes.filter(key => typeof key === 'string' && /^\d+:\d+$/.test(key)))] : [],
+    item: normalizeDiaryItem(record?.item),
+  };
+}
+
 function getPersonalRecord(type, id) {
   try {
     const records = JSON.parse(localStorage.getItem('cinevra_personal'));
     const record = records && records[`${type}:${id}`];
-    return {
-      rating: Number.isInteger(record?.rating) && record.rating >= 1 && record.rating <= 10 ? record.rating : '',
-      watchedOn: typeof record?.watchedOn === 'string' ? record.watchedOn : '',
-      note: typeof record?.note === 'string' ? record.note.slice(0, 1000) : '',
-      episodes: Array.isArray(record?.episodes) ? [...new Set(record.episodes.filter(key => /^\d+:\d+$/.test(key)))] : [],
-    };
+    return normalizePersonalRecord(record);
   } catch {
-    return { rating: '', watchedOn: '', note: '', episodes: [] };
+    return normalizePersonalRecord(null);
   }
+}
+
+function isDiaryDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+// Cuma baca catatan yang ada, progres episode saja bukan entri diary.
+function getDiaryEntries() {
+  const records = JSON.parse(localStorage.getItem('cinevra_personal') || '{}');
+  if (!records || typeof records !== 'object' || Array.isArray(records)) throw new Error('Invalid personal records');
+  return Object.entries(records).flatMap(([key, value]) => {
+    const match = /^(movie|tv):([1-9]\d*)$/.exec(key);
+    if (!match || !Number.isSafeInteger(Number(match[2]))) return [];
+    const record = normalizePersonalRecord(value);
+    record.watchedOn = isDiaryDate(record.watchedOn) ? record.watchedOn : '';
+    if (!record.rating && !record.watchedOn && !record.note.trim()) return [];
+    return [{ key, type: match[1], id: Number(match[2]), ...record }];
+  });
 }
 
 function savePersonalRecord(type, id, patch) {
@@ -36,11 +70,18 @@ function initPersonalDetails(item, details) {
     note.value = record.note;
   };
   populate();
+  if (typeof window !== 'undefined' && window.location?.hash === '#personalSection') {
+    section.scrollIntoView({ block: 'start', behavior: 'instant' });
+    rating.focus({ preventScroll: true });
+  }
   const status = document.getElementById('personalStatus');
   form.addEventListener('submit', event => {
     event.preventDefault();
     try {
-      savePersonalRecord(item.type, item.id, { rating: rating.value ? Number(rating.value) : '', watchedOn: date.value, note: note.value.trim() });
+      savePersonalRecord(item.type, item.id, {
+        rating: rating.value ? Number(rating.value) : '', watchedOn: date.value, note: note.value.trim(),
+        item: normalizeDiaryItem({ title: item.title, posterPath: item.posterPath, year: (item.releaseDate || '').slice(0, 4) }),
+      });
       status.textContent = 'Saved on this browser';
     } catch { status.textContent = 'Could not save. Browser storage is unavailable or full.'; }
   });

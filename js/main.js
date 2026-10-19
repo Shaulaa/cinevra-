@@ -131,7 +131,7 @@ function initMobileSearchToggle() {
 function highlightActiveNavLink() {
   const currentPage = window.location.pathname.split('/').pop() || 'index.html';
   document.querySelectorAll('.navbar__links a[data-page]').forEach((link) => {
-    if (link.dataset.page === currentPage) {
+    if (link.dataset.page === (currentPage === 'diary.html' ? 'my-space.html' : currentPage)) {
       link.classList.add('is-active');
     }
   });

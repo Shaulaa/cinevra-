@@ -159,8 +159,7 @@
   cursor: not-allowed;
 }
 
-/* filter-bar & filter-select biasanya ada di movies.css, tapi watchlist.html
-   gak load file itu, jadi versi ringkasnya diulang di sini */
+/* Layout filter khusus halaman Lists, dropdown-nya pakai style.css. */
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
@@ -213,24 +212,6 @@
 
 .filter-bar__search-clear[hidden] {
   display: none;
-}
-
-.filter-select {
-  appearance: none;
-  -webkit-appearance: none;
-  padding: 10px 34px 10px 16px;
-  border-radius: 999px;
-  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a8a6a3' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center;
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  font-size: 13.5px;
-  font-weight: 500;
-  transition: border-color var(--transition);
-}
-
-.filter-select:hover,
-.filter-select:focus-visible {
-  border-color: var(--accent-gold);
 }
 
 /* ---------- GRID SECTION ---------- */

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Watching Diary - Cinevra</title>
+  <meta name="description" content="Your movie and TV watching diary, with personal ratings, watch dates, and notes saved on this browser.">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Cinevra">
+  <meta property="og:title" content="Watching Diary - Cinevra">
+  <meta property="og:description" content="Your movie and TV watching diary, with personal ratings, watch dates, and notes saved on this browser.">
+  <meta property="og:image" content="assets/images/image.png">
+
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+  <link rel="alternate icon" href="assets/images/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/diary.css">
+</head>
+<body>
+
+  <noscript>
+    <div class="noscript-banner">
+      Cinevra needs JavaScript to show movies and TV shows. Enable JavaScript in your browser, then reload the page.
+    </div>
+  </noscript>
+
+  <!-- ================= NAVBAR ================= -->
+  <header class="navbar">
+    <a href="index.html" class="navbar__logo"><img src="assets/images/favicon.svg" alt="" class="navbar__logo-icon"><span class="navbar__logo-text">Cine<span>vra</span></span></a>
+
+    <nav class="navbar__links" id="navLinks">
+      <a href="index.html" data-page="index.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5 12 3l9 6.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"></path></svg>
+        <span>Home</span>
+      </a>
+      <a href="movies.html" data-page="movies.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M7 3v18M17 3v18M3 8h4M17 8h4M3 16h4M17 16h4"></path></svg>
+        <span>Movies</span>
+      </a>
+      <a href="tv-shows.html" data-page="tv-shows.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M8 21h8M12 18v3"></path></svg>
+        <span>TV Shows</span>
+      </a>
+      <a href="watchlist.html" data-page="watchlist.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"></path></svg>
+        <span>Lists</span>
+      </a>
+      <a href="my-space.html" data-page="my-space.html">
+        <svg class="navbar__links-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20V10M12 20V4M19 20v-7"></path></svg>
+        <span>My Space</span>
+      </a>
+    </nav>
+
+    <form class="navbar__search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" placeholder="Search movies, actors, genres..." aria-label="Search">
+      <button type="button" class="navbar__search-close" id="searchCloseBtn" aria-label="Close search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <div class="navbar__search-results" id="navSearchResults"></div>
+    </form>
+
+    <a href="watchlist.html" class="navbar__watchlist-link" aria-label="Watchlist">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"></path></svg>
+    </a>
+
+    <button class="navbar__surprise-btn" id="surpriseMeBtn" type="button" aria-label="Surprise Me, pick something to watch">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+        <circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="15.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="8.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="15.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"></circle>
+      </svg>
+      <span class="navbar__surprise-btn-text">Surprise Me</span>
+    </button>
+
+    <div class="navbar__mobile-actions">
+      <button class="navbar__mobile-search-btn" id="mobileSearchBtn" type="button" aria-label="Search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+
+      <button class="navbar__toggle" id="navToggle" type="button" aria-label="Open menu" aria-expanded="false">
+        <span class="navbar__toggle-bar"></span>
+        <span class="navbar__toggle-bar"></span>
+        <span class="navbar__toggle-bar"></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="navbar__backdrop" id="navBackdrop"></div>
+
+  <main class="container diary-page">
+    <nav class="space-nav" aria-label="My Space">
+      <a href="my-space.html">My Lists</a>
+      <a href="diary.html" aria-current="page">Watching Diary</a>
+    </nav>
+
+    <header class="diary-head">
+      <div>
+        <h1>Watching Diary</h1>
+        <p>The films, the stories, and what stayed with you.</p>
+      </div>
+      <a class="btn btn--outline" href="movies.html">Find your next film</a>
+    </header>
+    <p class="diary-local-note">Your ratings, watch dates, and notes stay on this browser. Add or edit an entry from a title's detail page.</p>
+
+    <div class="diary-filters" role="search" aria-label="Filter watching diary">
+      <label class="diary-search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16 16 4 4"></path></svg>
+        <input id="diarySearch" type="search" aria-label="Search diary" placeholder="Search titles or notes...">
+      </label>
+      <select class="filter-select" id="diaryType" aria-label="Type of title">
+        <option value="all">Movies and TV shows</option>
+        <option value="movie">Movies</option>
+        <option value="tv">TV shows</option>
+      </select>
+      <select class="filter-select" id="diaryYear" aria-label="Watch year"><option value="">All years</option></select>
+      <select class="filter-select" id="diaryOrder" aria-label="Diary order">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+      </select>
+    </div>
+    <p id="diaryCount" class="diary-count" role="status"></p>
+    <div class="diary-feedback">
+      <p id="diaryStatus" role="status"></p>
+      <button id="diaryRetry" class="btn btn--outline" type="button" hidden>Retry</button>
+    </div>
+
+    <div id="diaryTimeline"></div>
+    <div class="diary-empty" id="diaryEmpty" hidden>
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M8 3v18M12 8h4M12 12h4M12 16h2"></path></svg>
+      <h2 id="diaryEmptyTitle">Your diary starts with a film</h2>
+      <p id="diaryEmptyText">Open a movie or TV show and save a rating, watch date, or note to see it here.</p>
+      <a class="btn btn--primary" id="diaryBrowse" href="movies.html">Explore movies</a>
+      <button class="btn btn--outline" id="diaryReset" type="button" hidden>Clear filters</button>
+    </div>
+    <div class="diary-more"><button id="diaryMore" class="btn btn--outline" type="button" hidden>Load more entries</button></div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span class="site-footer__brand">Cinevra</span>
+      <span class="site-footer__note">made by syandana &middot; Movie data by TMDB</span>
+    </div>
+  </footer>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/personal.js"></script>
+  <script src="js/diary.js"></script>
+</body>
+</html>

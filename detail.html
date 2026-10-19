@@ -154,10 +154,13 @@
       <!-- ================= WHERE TO WATCH ================= -->
       <!-- disembunyikan lewat JS kalau memang tidak ada data provider buat judul ini -->
       <section class="personal-panel" id="personalSection" hidden aria-labelledby="personalHeading">
-        <h2 id="personalHeading">My rating and notes</h2>
+        <div class="personal-panel__heading">
+          <h2 id="personalHeading">My rating and notes</h2>
+          <a class="btn btn--outline" href="diary.html">View diary</a>
+        </div>
         <p>Saved on this browser without an account. Clearing browser data removes these records.</p>
         <form id="personalForm" class="personal-form">
-          <label>My rating<select id="personalRating"><option value="">Not rated</option></select></label>
+          <label>My rating<select class="filter-select" id="personalRating"><option value="">Not rated</option></select></label>
           <label>Watched on<input id="personalDate" type="date"></label>
           <label class="personal-form__note">Short note<textarea id="personalNote" rows="3" maxlength="1000" placeholder="What did you think?"></textarea></label>
           <div class="personal-actions"><button class="btn btn--primary" type="submit">Save review</button><button class="btn btn--outline" id="personalClear" type="button">Clear review</button></div>

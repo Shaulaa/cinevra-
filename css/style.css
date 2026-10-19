@@ -154,6 +154,7 @@ input:focus-visible {
    NAVBAR
    ========================================================= */
 .navbar {
+  --navbar-padding-inline: 40px;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -161,7 +162,7 @@ input:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 32px;
-  padding: 18px 40px;
+  padding: 18px var(--navbar-padding-inline);
   background: rgba(10, 10, 13, 0.85);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -356,6 +357,7 @@ input:focus-visible {
   align-items: center;
   gap: 8px;
   width: 280px;
+  min-width: 0;
   padding: 9px 14px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -369,6 +371,7 @@ input:focus-visible {
 
 .navbar__search input {
   flex: 1;
+  min-width: 0;
   background: none;
   border: none;
   color: var(--text-primary);
@@ -649,7 +652,8 @@ input:focus-visible {
 
 @media (max-width: 1100px) {
   .navbar {
-    padding: 14px 20px;
+    --navbar-padding-inline: 20px;
+    padding: 14px var(--navbar-padding-inline);
     gap: 12px;
     transition: transform 280ms ease;
   }
@@ -783,6 +787,150 @@ input:focus-visible {
 
   .navbar__surprise-btn-text {
     display: none;
+  }
+}
+
+/* ---------- DROPDOWN FILTER ---------- */
+.space-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 32px 0;
+}
+
+.space-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.space-nav a:hover {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.space-nav a[aria-current="page"] {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--accent-gold-soft);
+}
+
+.filter-bar__search {
+  min-height: 44px;
+}
+
+.filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  color-scheme: dark;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 10px 40px 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a8a6a3' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 14px center;
+  color: var(--text-primary);
+  font: 500 14px/1.5 var(--font-body);
+  cursor: pointer;
+  transition: background-color var(--transition), border-color var(--transition);
+}
+
+.filter-select:hover:not(:disabled) {
+  background-color: var(--surface-hover);
+  border-color: var(--text-muted);
+}
+
+.filter-select:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 3px;
+}
+
+.filter-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.filter-select option {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* Browser lama tetap pakai select biasa, pilihan dan event-nya sama. */
+@supports (appearance: base-select) {
+  .filter-select,
+  .filter-select::picker(select) {
+    appearance: base-select;
+  }
+
+  .filter-select {
+    gap: 16px;
+    padding-right: 14px;
+    background-image: none;
+  }
+
+  .filter-select:open {
+    border-color: var(--accent-gold);
+    background-color: var(--surface-hover);
+  }
+
+  .filter-select::picker-icon {
+    width: 14px;
+    height: 14px;
+    content: '';
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a8a6a3' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") center / contain no-repeat;
+    transition: transform var(--transition);
+  }
+
+  .filter-select:open::picker-icon {
+    transform: rotate(180deg);
+  }
+
+  .filter-select::picker(select) {
+    min-width: max(anchor-size(width), 220px);
+    max-width: calc(100vw - 32px);
+    max-height: min(360px, 60vh);
+    margin-block: 8px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) var(--bg-elevated);
+  }
+
+  .filter-select option {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font: 500 14px/1.5 var(--font-body);
+    cursor: pointer;
+  }
+
+  .filter-select option:hover,
+  .filter-select option:focus {
+    background: var(--surface-hover);
+    outline: none;
+  }
+
+  .filter-select option:checked {
+    background: color-mix(in srgb, var(--accent-gold) 12%, var(--bg-elevated));
+    color: var(--accent-gold-soft);
+  }
+
+  .filter-select option::checkmark {
+    order: 1;
+    margin-left: auto;
+    color: var(--accent-gold);
   }
 }
 
@@ -1844,6 +1992,15 @@ img.img-fallback {
 
 /* ================= MOBILE RESPONSIVE FIXES ================= */
 @media (max-width: 360px) {
+  .navbar {
+    gap: 8px;
+  }
+
+  .navbar__logo {
+    gap: 8px;
+    font-size: 22px;
+  }
+
   .dialog--share {
     margin: 10px;
     padding: 16px;
@@ -1863,8 +2020,8 @@ img.img-fallback {
 /* Safe area insets for iOS notch/Dynamic Island */
 @supports (padding: env(safe-area-inset-bottom)) {
   .navbar {
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    padding-left: max(var(--navbar-padding-inline), env(safe-area-inset-left));
+    padding-right: max(var(--navbar-padding-inline), env(safe-area-inset-right));
   }
   
   .site-footer {
