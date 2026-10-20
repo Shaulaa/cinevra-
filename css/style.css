@@ -1544,6 +1544,17 @@ img.img-fallback {
   gap: 10px;
 }
 
+.site-footer__privacy {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.site-footer__privacy:hover { color: var(--accent-gold-soft); }
+
 .site-footer__brand {
   font-family: var(--font-display);
   font-size: 16px;

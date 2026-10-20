@@ -1,0 +1,22 @@
+.privacy-page { max-width: 820px; padding-top: 56px; padding-bottom: 48px; }
+.privacy-heading h1 { margin: 0 0 12px; font-family: var(--font-display); font-size: clamp(36px, 6vw, 54px); font-weight: 600; line-height: 1.15; }
+.privacy-date { margin-bottom: 24px; color: var(--text-secondary); font-size: 13px; }
+.privacy-heading > p:last-child { color: var(--text-secondary); font-size: 17px; line-height: 1.85; }
+.privacy-contents { display: flex; flex-wrap: wrap; gap: 4px 24px; margin: 28px 0 40px; padding: 16px 0; border-block: 1px solid var(--border); }
+.privacy-contents a, .privacy-back { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
+.privacy-page a { color: var(--accent-gold-soft); text-decoration: underline; text-underline-offset: 4px; overflow-wrap: anywhere; }
+.privacy-page a:hover { color: var(--text-primary); }
+.privacy-content { color: var(--text-secondary); font-size: 15px; line-height: 1.9; }
+.privacy-content section { margin-bottom: 36px; scroll-margin-top: 112px; }
+.privacy-content h2 { margin: 0 0 14px; color: var(--text-primary); font-family: var(--font-display); font-size: 26px; font-weight: 500; line-height: 1.35; }
+.privacy-content p + p { margin-top: 14px; }
+.privacy-content ul { padding-left: 22px; margin-bottom: 16px; }
+.privacy-content li + li { margin-top: 12px; }
+.privacy-content strong { color: var(--text-primary); font-weight: 600; }
+.privacy-back { margin-top: 8px; }
+@media (max-width: 640px) {
+  .privacy-page { padding-top: 32px; padding-bottom: 24px; }
+  .privacy-heading > p:last-child { font-size: 16px; }
+  .privacy-contents { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; margin-bottom: 32px; }
+  .privacy-content h2 { font-size: 23px; }
+}
