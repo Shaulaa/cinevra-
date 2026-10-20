@@ -63,7 +63,7 @@ http://localhost:5500
 ## Akun dan sinkronisasi
 
 Cinevra menyediakan login email/password dan Google melalui Supabase, penyimpanan library per akun, serta impor koleksi tamu.
-Tanpa konfigurasi Supabase, semua fitur tamu tetap bisa digunakan. Konfigurasi layanan, migrasi SQL, dan batas pengujiannya ada di [panduan Supabase](SUPABASE_SETUP.md).
+Tanpa konfigurasi Supabase, semua fitur tamu tetap bisa digunakan. Set `SUPABASE_URL` dan `SUPABASE_PUBLISHABLE_KEY` di environment hosting. Jangan gunakan secret key atau service role key di frontend. Migrasi database tersedia di `supabase/migrations/202610190001_library.sql` untuk proyek baru dan dijalankan satu kali.
 
 ## Deployment
 
@@ -189,4 +189,4 @@ Proyek ini dibuat untuk kebutuhan belajar dan penggunaan pribadi. Silakan sesuai
 
 ## Community
 
-Review singkat, reaksi, dan daftar publik tersedia melalui menu Community. Publikasi bersifat pilihan dan tidak membuka Diary pribadi. Setup database dan batas versi awal ada di [COMMUNITY.md](COMMUNITY.md).
+Review singkat, reaksi, dan daftar publik tersedia melalui menu Community. Publikasi bersifat pilihan dan tidak membuka Diary pribadi. Aktifkan dengan menjalankan `supabase/migrations/202610200001_community.sql` satu kali setelah migrasi library. Jangan menjalankan ulang migrasi library pada database yang sudah berisi data.

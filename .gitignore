@@ -2,8 +2,6 @@
 # js/config.js dibuat otomatis oleh scripts/generate-config.js saat build
 # jangan commit file ini ke repository publik
 js/config.js
-AGENT.md
-design.md
 
 # Rahasia dan hasil build lokal
 .env
@@ -17,10 +15,9 @@ dist/
 supabase/.temp/
 *.log
 
-# Catatan audit lokal
-/ACCESSIBILITY.md
-/IMPLEMENTATION-SUMMARY.md
-/MOBILE-TESTING.md
+# Dokumentasi tambahan tetap lokal
+/*.md
+!/README.md
 
 # Kiro IDE
 .kiro/
