@@ -18,13 +18,14 @@ Cinevra dirancang untuk membantu kamu:
 
 - Katalog film dan TV populer
 - Halaman detail lengkap dengan poster, overview, trailer, cast, dan rekomendasi
-- Watchlist berbasis browser dengan `localStorage`
+- Watchlist lokal untuk tamu dan penyimpanan Supabase untuk pengguna yang login
 - Filter multi-kriteria: genre, tahun, negara, dan platform streaming
 - My Space untuk:
   - backup & restore data library
   - statistik pribadi
   - rekomendasi "For You"
 - Dukungan tampilan desktop dan mobile
+- Watching Diary untuk melihat rating, tanggal menonton, dan catatan dalam satu halaman
 
 ## Teknologi yang dipakai
 
@@ -32,7 +33,8 @@ Cinevra dirancang untuk membantu kamu:
 - CSS3 (Flexbox, Grid, custom properties)
 - JavaScript ES6+
 - TMDB API
-- localStorage untuk data lokal pengguna
+- localStorage untuk koleksi tamu dan preferensi lokal
+- Supabase Auth dan PostgreSQL untuk akun dan koleksi cloud
 
 ## Persiapan cepat
 
@@ -57,6 +59,11 @@ python -m http.server 5500
 ```text
 http://localhost:5500
 ```
+
+## Akun dan sinkronisasi
+
+Cinevra menyediakan login email/password dan Google melalui Supabase, penyimpanan library per akun, serta impor koleksi tamu.
+Tanpa konfigurasi Supabase, semua fitur tamu tetap bisa digunakan. Konfigurasi layanan, migrasi SQL, dan batas pengujiannya ada di [panduan Supabase](SUPABASE_SETUP.md).
 
 ## Deployment
 
@@ -139,6 +146,22 @@ Cinevra juga memiliki fitur personal yang cukup lengkap di halaman My Space:
 
 ## Testing
 
+Watching Diary tersedia dari tab di My Space atau tombol View diary di halaman detail.
+Simpan rating, tanggal, atau catatan melalui Save review untuk menambahkan judul ke diary.
+Entri dikelompokkan per bulan, bisa dicari dari judul atau catatan, serta difilter berdasarkan jenis dan tahun menonton.
+Catatan tanpa tanggal tetap muncul di bagian No watch date. Versi ini memakai satu review per judul, belum mencatat beberapa kali nonton ulang.
+Judul dan poster ikut disimpan saat menyimpan review baru. Entri lama dapat memakai metadata koleksi lokal atau TMDB.
+Jika TMDB gagal, rating dan catatan tetap terlihat dengan tombol Retry. Diary tidak mengubah data saat dibaca.
+
+Pengujian diary dan kompatibilitas penyimpanan personal bisa dijalankan dengan perintah berikut.
+
+```bash
+node scripts/test-diary.js
+node scripts/test-diary-ui.js
+node scripts/test-personal.js
+node scripts/test-personal-ui.js
+```
+
 Beberapa script pengujian yang tersedia:
 
 ```bash
@@ -162,3 +185,8 @@ Dibuat oleh Rafif Shula Syandana untuk proyek pembelajaran web dan eksplorasi pe
 ## Lisensi
 
 Proyek ini dibuat untuk kebutuhan belajar dan penggunaan pribadi. Silakan sesuaikan dan modifikasi sesuai kebutuhanmu.
+
+
+## Community
+
+Review singkat, reaksi, dan daftar publik tersedia melalui menu Community. Publikasi bersifat pilihan dan tidak membuka Diary pribadi. Setup database dan batas versi awal ada di [COMMUNITY.md](COMMUNITY.md).

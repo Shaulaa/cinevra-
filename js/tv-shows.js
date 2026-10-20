@@ -57,7 +57,7 @@ function syncTVQueryState() {
 }
 
 let syncTVStreaming = () => {};
-document.addEventListener('DOMContentLoaded', () => {
+CinevraCloud.boot( () => {
   const params = new URLSearchParams(window.location.search);
   tvState.watchRegion = params.has('country') ? params.get('country') : (params.has('search') || params.has('list') ? '' : 'ID');
   tvState.providerId = /^\d+$/.test(params.get('platform') || '') ? params.get('platform') : '';

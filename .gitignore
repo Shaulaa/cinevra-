@@ -5,5 +5,22 @@ js/config.js
 AGENT.md
 design.md
 
+# Rahasia dan hasil build lokal
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+node_modules/
+dist/
+.supabase/
+supabase/.temp/
+*.log
+
+# Catatan audit lokal
+/ACCESSIBILITY.md
+/IMPLEMENTATION-SUMMARY.md
+/MOBILE-TESTING.md
+
 # Kiro IDE
 .kiro/

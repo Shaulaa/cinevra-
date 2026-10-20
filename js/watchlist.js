@@ -14,7 +14,7 @@ let searchQuery = '';
 const DEFAULT_LIST_ID = 'watchlist';
 let activeListId = DEFAULT_LIST_ID;
 
-document.addEventListener('DOMContentLoaded', () => {
+CinevraCloud.boot( () => {
   const requested = new URLSearchParams(window.location.search).get('list');
   if (requested && getCustomList(requested)) activeListId = requested;
 
@@ -103,8 +103,8 @@ function handleCreateList() {
   openNameDialog({
     title: 'New list',
     confirmLabel: 'Create',
-    onSubmit: (name) => {
-      const result = createCustomList(name);
+    onSubmit: async (name) => {
+      const result = await createCustomList(name);
       if (result.error) return result.error;
       switchList(result.list.id);
       return null;
@@ -124,8 +124,8 @@ function bindListActions() {
       title: 'Rename list',
       initial: list.name,
       confirmLabel: 'Save',
-      onSubmit: (name) => {
-        const result = renameCustomList(list.id, name);
+      onSubmit: async (name) => {
+        const result = await renameCustomList(list.id, name);
         if (result.error) return result.error;
         renderListSwitcher();
         renderWatchlistPage();
@@ -134,19 +134,19 @@ function bindListActions() {
     });
   });
 
-  document.getElementById('deleteListBtn').addEventListener('click', () => {
+  document.getElementById('deleteListBtn').addEventListener('click', async () => {
     const list = getCustomList(activeListId);
     if (!list) return;
 
-    const snapshot = deleteCustomList(list.id);
+    const snapshot = await deleteCustomList(list.id);
     switchList(DEFAULT_LIST_ID);
 
     // sama kayak Clear All, ada Undo supaya gak hilang permanen kalau kepencet
     showToast(`"${list.name}" deleted`, {
       actionLabel: 'Undo',
       duration: 5000,
-      onAction: () => {
-        restoreCustomLists(snapshot);
+      onAction: async () => {
+        await restoreCustomLists(snapshot);
         switchList(list.id);
         showToast('List restored');
       },
@@ -364,7 +364,7 @@ function updateEmptyStateText(isTrulyEmpty, customList) {
  * status, dan pencarian aktif), lalu nawarin "Undo" lewat toast supaya
  * gak beneran ilang permanen kalau ternyata gak sengaja.
  */
-function handleClearAll() {
+async function handleClearAll() {
   const list = getActiveItems();
   let visible = activeFilter === 'all' ? list : list.filter((i) => i.type === activeFilter);
   if (activeStatus === 'watched') visible = visible.filter((i) => i.watched);
@@ -375,15 +375,15 @@ function handleClearAll() {
 
   const listId = activeListId;
   const listName = isDefaultList() ? 'Watchlist' : getCustomList(listId).name;
-  const snapshot = isDefaultList() ? clearWatchlistItems(visible) : clearCustomListItems(listId, visible);
+  const snapshot = isDefaultList() ? await clearWatchlistItems(visible) : await clearCustomListItems(listId, visible);
   renderWatchlistPage();
 
   showToast(`${visible.length} titles removed from ${listName}`, {
     actionLabel: 'Undo',
     duration: 5000,
-    onAction: () => {
-      if (listId === DEFAULT_LIST_ID) restoreWatchlist(snapshot);
-      else restoreCustomLists(snapshot);
+    onAction: async () => {
+      if (listId === DEFAULT_LIST_ID) await restoreWatchlist(snapshot);
+      else await restoreCustomLists(snapshot);
       renderWatchlistPage();
       showToast(`${listName} restored`);
     },
@@ -490,9 +490,9 @@ function renderWatchlistCard(item) {
   card.appendChild(meta);
 
   // toggle status "sudah ditonton", render ulang biar badge & posisi (kalau lagi difilter status) ikut update
-  watchedBtn.addEventListener('click', (e) => {
+  watchedBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    const nowWatched = toggleWatchedStatus(item.id, item.type);
+    const nowWatched = await toggleWatchedStatus(item.id, item.type);
     showToast(nowWatched ? 'Marked as watched' : 'Marked as unwatched');
     renderWatchlistPage();
   });
@@ -501,11 +501,16 @@ function renderWatchlistCard(item) {
   removeBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     card.classList.add('is-removing');
-    setTimeout(() => {
-      if (showWatched) removeFromWatchlist(item.id, item.type);
-      else removeFromCustomList(activeListId, item.id, item.type);
-      showToast(showWatched ? 'Removed from Watchlist' : 'Removed from list');
-      renderWatchlistPage(); // render ulang supaya counter & empty state ikut update
+    setTimeout(async () => {
+      try {
+        if (showWatched) await removeFromWatchlist(item.id, item.type);
+        else await removeFromCustomList(activeListId, item.id, item.type);
+        showToast(showWatched ? 'Removed from Watchlist' : 'Removed from list');
+        renderWatchlistPage();
+      } catch (error) {
+        card.classList.remove('is-removing');
+        showToast(error.message || 'Could not remove this title. Please retry.');
+      } // render ulang supaya counter & empty state ikut update
     }, 200);
   });
 

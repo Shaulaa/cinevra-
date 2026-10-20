@@ -265,13 +265,11 @@ async function renderListDetail(listId) {
       <line x1="6" y1="6" x2="18" y2="18"></line>
     </svg>`;
     
-    removeBtn.addEventListener('click', (e) => {
+    removeBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      removeFromCustomList(listId, item.id, item.type);
-      showToast('Dihapus dari daftar', 'Undo', () => {
-        addToCustomList(listId, item);
-      });
+      await removeFromCustomList(listId, item.id, item.type);
+      showToast('Dihapus dari daftar', { actionLabel: 'Undo', onAction: async () => { await addToCustomList(listId, item); } });
     });
 
     const posterWrap = card.querySelector('.movie-card__poster');
@@ -306,8 +304,8 @@ function handleCreateList() {
   openNameDialog({
     title: 'Create New List',
     confirmLabel: 'Create',
-    onSubmit: (name) => {
-      const result = createCustomList(name);
+    onSubmit: async (name) => {
+      const result = await createCustomList(name);
       if (result.error) return result.error;
       showToast(`Daftar "${result.list.name}" berhasil dibuat`);
       return null; // success, close dialog
@@ -326,8 +324,8 @@ function handleEditList(listId) {
     title: 'Rename List',
     initial: list.name,
     confirmLabel: 'Save',
-    onSubmit: (name) => {
-      const result = renameCustomList(listId, name);
+    onSubmit: async (name) => {
+      const result = await renameCustomList(listId, name);
       if (result.error) return result.error;
       showToast('Nama daftar berhasil diubah');
       return null;
@@ -338,15 +336,16 @@ function handleEditList(listId) {
 /**
  * Handle delete list
  */
-function handleDeleteList(listId) {
+async function handleDeleteList(listId) {
   const list = getCustomList(listId);
   if (!list) return;
 
   if (!confirm(`Delete "${list.name}"? This cannot be undone.`)) return;
 
-  const snapshot = deleteCustomList(listId);
-  showToast(`Daftar "${list.name}" dihapus`, 'Undo', () => {
-    restoreCustomLists(snapshot);
+  const snapshot = await deleteCustomList(listId);
+  showToast(`Daftar "${list.name}" dihapus`, {
+    actionLabel: 'Undo',
+    onAction: async () => { await restoreCustomLists(snapshot); },
   });
 
   // jika sedang di detail view list yang dihapus, redirect ke grid
@@ -364,11 +363,7 @@ function handleShareList(listId) {
 }
 
 // Initialize saat page load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
+CinevraCloud.boot(init);
 
 // Handle browser back/forward
 window.addEventListener('popstate', () => {
@@ -380,10 +375,3 @@ window.addEventListener('popstate', () => {
     renderListsGrid();
   }
 });
-
-// Init navbar
-initNavbarToggle();
-initMobileSearchToggle();
-initNavbarSearch();
-initSurpriseMeButton();
-highlightActiveNavLink();

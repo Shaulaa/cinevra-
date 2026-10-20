@@ -39,6 +39,7 @@ function initNavbarToggle() {
     links.classList.toggle('is-open', opening);
     toggleBtn.classList.toggle('is-open', opening);
     toggleBtn.setAttribute('aria-expanded', String(opening));
+    toggleBtn.setAttribute('aria-label', opening ? 'Close menu' : 'Open menu');
     updateNavBackdrop();
   });
 
@@ -53,6 +54,12 @@ function initNavbarToggle() {
       closeMobileSearch();
     });
   }
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && links.classList.contains('is-open')) {
+      closeMobileMenu();
+      toggleBtn.focus();
+    }
+  });
 }
 
 function closeMobileMenu() {
@@ -62,6 +69,7 @@ function closeMobileMenu() {
   links.classList.remove('is-open');
   toggleBtn.classList.remove('is-open');
   toggleBtn.setAttribute('aria-expanded', 'false');
+  toggleBtn.setAttribute('aria-label', 'Open menu');
   updateNavBackdrop();
 }
 
@@ -865,8 +873,8 @@ function openSurpriseDialog() {
    ========================================================= */
 
 function getWatchlist() {
-  const raw = localStorage.getItem(WATCHLIST_STORAGE_KEY);
   try {
+    const raw = typeof CinevraCloud !== 'undefined' ? CinevraCloud.read(WATCHLIST_STORAGE_KEY) : localStorage.getItem(WATCHLIST_STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch (error) {
     // kalau data di localStorage rusak/corrupt, mulai dari array kosong
@@ -875,44 +883,39 @@ function getWatchlist() {
   }
 }
 
-function saveWatchlist(list) {
-  try {
-    localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(list));
-    // beritahu bagian lain di halaman yang sama (misalnya row "Continue Your
-    // Watchlist" di home.js) supaya bisa render ulang langsung tanpa refresh
-    window.dispatchEvent(new CustomEvent('watchlist:change', { detail: list }));
-  } catch (error) {
-    console.error('Gagal menyimpan watchlist:', error);
-  }
+async function saveWatchlist(list) {
+  if (typeof CinevraCloud !== 'undefined') await CinevraCloud.write(WATCHLIST_STORAGE_KEY, JSON.stringify(list));
+  else localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(list));
+  window.dispatchEvent(new CustomEvent('watchlist:change', { detail: list }));
 }
 
 function isInWatchlist(id, type) {
   return getWatchlist().some((item) => item.id === id && item.type === type);
 }
 
-function addToWatchlist(item) {
+async function addToWatchlist(item) {
   const list = getWatchlist();
   if (isInWatchlist(item.id, item.type)) return;
   list.unshift(item); // item baru ditaruh di paling depan
-  saveWatchlist(list);
+  await saveWatchlist(list);
 }
 
-function removeFromWatchlist(id, type) {
+async function removeFromWatchlist(id, type) {
   const list = getWatchlist().filter((item) => !(item.id === id && item.type === type));
-  saveWatchlist(list);
+  await saveWatchlist(list);
 }
 
 /**
  * Menambah jika belum ada, menghapus jika sudah ada.
  * @returns {boolean} true jika sekarang ADA di watchlist, false jika dihapus
  */
-function toggleWatchlist(item) {
+async function toggleWatchlist(item) {
   if (isInWatchlist(item.id, item.type)) {
-    removeFromWatchlist(item.id, item.type);
+    await removeFromWatchlist(item.id, item.type);
     showToast('Removed from Watchlist');
     return false;
   }
-  addToWatchlist(item);
+  await addToWatchlist(item);
   showToast('Added to Watchlist');
   return true;
 }
@@ -927,17 +930,17 @@ function isWatched(id, type) {
   return Boolean(item && item.watched);
 }
 
-function setWatchedStatus(id, type, watched) {
+async function setWatchedStatus(id, type, watched) {
   const list = getWatchlist();
   const item = list.find((i) => i.id === id && i.type === type);
   if (!item) return;
   item.watched = watched;
-  saveWatchlist(list);
+  await saveWatchlist(list);
 }
 
-function toggleWatchedStatus(id, type) {
+async function toggleWatchedStatus(id, type) {
   const nowWatched = !isWatched(id, type);
-  setWatchedStatus(id, type, nowWatched);
+  await setWatchedStatus(id, type, nowWatched);
   return nowWatched;
 }
 
@@ -949,11 +952,11 @@ function toggleWatchedStatus(id, type) {
  * @param {Array} itemsToRemove - array item watchlist yang mau dihapus
  * @returns {Array} snapshot seluruh watchlist SEBELUM item-item itu dihapus
  */
-function clearWatchlistItems(itemsToRemove) {
+async function clearWatchlistItems(itemsToRemove) {
   const snapshot = getWatchlist();
   const removeKeys = new Set(itemsToRemove.map((i) => `${i.type}:${i.id}`));
   const remaining = snapshot.filter((item) => !removeKeys.has(`${item.type}:${item.id}`));
-  saveWatchlist(remaining);
+  await saveWatchlist(remaining);
   return snapshot;
 }
 
@@ -961,8 +964,11 @@ function clearWatchlistItems(itemsToRemove) {
  * Mengembalikan watchlist persis seperti snapshot yang diberikan.
  * Dipakai buat tombol "Undo" setelah clearWatchlistItems().
  */
-function restoreWatchlist(snapshot) {
-  saveWatchlist(snapshot);
+async function restoreWatchlist(snapshot) {
+  if (typeof CinevraCloud !== 'undefined' && CinevraCloud.state().user) {
+    snapshot = [...new Map([...snapshot, ...getWatchlist()].map(item => [`${item.type}:${item.id}`, item])).values()];
+  }
+  await saveWatchlist(snapshot);
 }
 
 /**
@@ -1032,7 +1038,7 @@ function clearRecentlyViewed() {
 
 function getCustomLists() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(LISTS_STORAGE_KEY));
+    const parsed = JSON.parse(typeof CinevraCloud !== 'undefined' ? CinevraCloud.read(LISTS_STORAGE_KEY) : localStorage.getItem(LISTS_STORAGE_KEY));
     if (!Array.isArray(parsed)) return [];
     // buang entri yang bentuknya rusak supaya halaman gak error
     return parsed.filter(
@@ -1044,14 +1050,10 @@ function getCustomLists() {
   }
 }
 
-function saveCustomLists(lists) {
-  try {
-    localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify(lists));
-    window.dispatchEvent(new CustomEvent('lists:change', { detail: lists }));
-  } catch (error) {
-    console.error('Gagal menyimpan daftar:', error);
-    showToast('Could not save your lists, storage may be full');
-  }
+async function saveCustomLists(lists) {
+  if (typeof CinevraCloud !== 'undefined') await CinevraCloud.write(LISTS_STORAGE_KEY, JSON.stringify(lists));
+  else localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify(lists));
+  window.dispatchEvent(new CustomEvent('lists:change', { detail: lists }));
 }
 
 function getCustomList(listId) {
@@ -1082,20 +1084,20 @@ function validateListName(name, ignoreId) {
  * Membuat daftar baru.
  * @returns {{list: Object}|{error: string}}
  */
-function createCustomList(name) {
+async function createCustomList(name, items = []) {
   const error = validateListName(name);
   if (error) return { error };
 
   const list = {
     id: `l${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     name: name.trim(),
-    items: [],
+    items,
   };
-  saveCustomLists([...getCustomLists(), list]);
+  await saveCustomLists([...getCustomLists(), list]);
   return { list };
 }
 
-function renameCustomList(listId, name) {
+async function renameCustomList(listId, name) {
   const error = validateListName(name, listId);
   if (error) return { error };
 
@@ -1103,7 +1105,7 @@ function renameCustomList(listId, name) {
   const list = lists.find((l) => l.id === listId);
   if (!list) return { error: 'That list no longer exists.' };
   list.name = name.trim();
-  saveCustomLists(lists);
+  await saveCustomLists(lists);
   return { list };
 }
 
@@ -1111,14 +1113,22 @@ function renameCustomList(listId, name) {
  * Menghapus daftar. Snapshot seluruh daftar sebelum dihapus dikembalikan
  * supaya pemanggilnya bisa nawarin "Undo" lewat toast.
  */
-function deleteCustomList(listId) {
+async function deleteCustomList(listId) {
   const snapshot = getCustomLists();
-  saveCustomLists(snapshot.filter((list) => list.id !== listId));
+  await saveCustomLists(snapshot.filter((list) => list.id !== listId));
   return snapshot;
 }
 
-function restoreCustomLists(snapshot) {
-  saveCustomLists(snapshot);
+async function restoreCustomLists(snapshot) {
+  if (typeof CinevraCloud !== 'undefined' && CinevraCloud.state().user) {
+    const merged = new Map(snapshot.map(list => [list.id, list]));
+    getCustomLists().forEach(list => {
+      const old = merged.get(list.id);
+      merged.set(list.id, { ...list, items: [...new Map([...(old?.items || []), ...list.items].map(item => [`${item.type}:${item.id}`, item])).values()] });
+    });
+    snapshot = [...merged.values()];
+  }
+  await saveCustomLists(snapshot);
 }
 
 function isInCustomList(listId, id, type) {
@@ -1126,34 +1136,34 @@ function isInCustomList(listId, id, type) {
   return Boolean(list && list.items.some((item) => item.id === id && item.type === type));
 }
 
-function addToCustomList(listId, item) {
+async function addToCustomList(listId, item) {
   const lists = getCustomLists();
   const list = lists.find((l) => l.id === listId);
   if (!list || list.items.some((i) => i.id === item.id && i.type === item.type)) return;
   list.items.unshift(item); // item baru di paling depan, sama kayak watchlist
-  saveCustomLists(lists);
+  await saveCustomLists(lists);
 }
 
-function removeFromCustomList(listId, id, type) {
+async function removeFromCustomList(listId, id, type) {
   const lists = getCustomLists();
   const list = lists.find((l) => l.id === listId);
   if (!list) return;
   list.items = list.items.filter((i) => !(i.id === id && i.type === type));
-  saveCustomLists(lists);
+  await saveCustomLists(lists);
 }
 
 /**
  * Menghapus sekelompok item dari satu daftar sekaligus (tombol "Clear All").
  * @returns {Array} snapshot seluruh daftar sebelum dihapus, buat "Undo"
  */
-function clearCustomListItems(listId, itemsToRemove) {
+async function clearCustomListItems(listId, itemsToRemove) {
   const snapshot = getCustomLists();
   const removeKeys = new Set(itemsToRemove.map((i) => `${i.type}:${i.id}`));
   const lists = getCustomLists();
   const list = lists.find((l) => l.id === listId);
   if (list) {
     list.items = list.items.filter((i) => !removeKeys.has(`${i.type}:${i.id}`));
-    saveCustomLists(lists);
+    await saveCustomLists(lists);
   }
   return snapshot;
 }
@@ -1211,9 +1221,13 @@ function openNameDialog({ title, initial = '', confirmLabel = 'Save', onSubmit }
   footer.appendChild(confirmBtn);
   form.appendChild(footer);
 
-  form.addEventListener('submit', (event) => {
+  form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const error = onSubmit(input.value);
+    confirmBtn.disabled = true;
+    let error;
+    try { error = await onSubmit(input.value); }
+    catch (failure) { error = failure.message || 'Could not save. Please retry.'; }
+    finally { confirmBtn.disabled = false; }
     if (error) {
       errorEl.textContent = error;
       errorEl.hidden = false;
@@ -1254,13 +1268,13 @@ function openListPicker(item, onClose) {
         name: 'Watchlist',
         count: getWatchlist().length,
         checked: isInWatchlist(item.id, item.type),
-        toggle: (on) => (on ? addToWatchlist(item) : removeFromWatchlist(item.id, item.type)),
+        toggle: async (on) => (on ? await addToWatchlist(item) : await removeFromWatchlist(item.id, item.type)),
       },
       ...getCustomLists().map((list) => ({
         name: list.name,
         count: list.items.length,
         checked: list.items.some((i) => i.id === item.id && i.type === item.type),
-        toggle: (on) => (on ? addToCustomList(list.id, item) : removeFromCustomList(list.id, item.id, item.type)),
+        toggle: async (on) => (on ? await addToCustomList(list.id, item) : await removeFromCustomList(list.id, item.id, item.type)),
       })),
     ];
 
@@ -1271,9 +1285,12 @@ function openListPicker(item, onClose) {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.checked = row.checked;
-      checkbox.addEventListener('change', () => {
+      checkbox.addEventListener('change', async () => {
         const rowIndex = rows.indexOf(row);
-        row.toggle(checkbox.checked);
+        checkbox.disabled = true;
+        try { await row.toggle(checkbox.checked); }
+        catch (error) { checkbox.checked = !checkbox.checked; showToast(error.message); }
+        finally { checkbox.disabled = false; }
         render();
         // fokus dikembalikan ke checkbox yang sama setelah render ulang
         const same = body.querySelectorAll('.list-picker input')[rowIndex];
@@ -1321,16 +1338,15 @@ function openListPicker(item, onClose) {
     errorEl.hidden = true;
     body.appendChild(errorEl);
 
-    createForm.addEventListener('submit', (event) => {
+    createForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const result = createCustomList(input.value);
+      const result = await createCustomList(input.value, [item]);
       if (result.error) {
         errorEl.textContent = result.error;
         errorEl.hidden = false;
         input.focus();
         return;
       }
-      addToCustomList(result.list.id, item);
       render();
     });
 
@@ -1380,7 +1396,7 @@ function getListMetadata(listId) {
  * @param {Object} listData - { name, items: [{ id, type, title, posterPath, rating, year }] }
  * @returns {{list: Object}|{error: string}}
  */
-function importSharedList(listData) {
+async function importSharedList(listData) {
   if (!listData || !listData.name || !Array.isArray(listData.items)) {
     return { error: 'Invalid list data.' };
   }
@@ -1402,19 +1418,7 @@ function importSharedList(listData) {
     return { error };
   }
   
-  // buat list baru
-  const result = createCustomList(candidateName);
-  if (result.error) return result;
-  
-  // tambahkan semua items
-  const lists = getCustomLists();
-  const list = lists.find(l => l.id === result.list.id);
-  if (list) {
-    list.items = [...listData.items];
-    saveCustomLists(lists);
-  }
-  
-  return { list: result.list, imported: true };
+  return await createCustomList(candidateName, [...listData.items]);
 }
 
 /**
@@ -1502,10 +1506,10 @@ function showToast(message, options = {}) {
     actionBtn.type = 'button';
     actionBtn.className = 'toast__action';
     actionBtn.textContent = options.actionLabel;
-    actionBtn.addEventListener('click', () => {
+    actionBtn.addEventListener('click', async () => {
       clearTimeout(toastTimeout);
       toast.classList.remove('is-visible');
-      options.onAction();
+      await options.onAction();
     });
     toast.appendChild(actionBtn);
   }
@@ -1701,6 +1705,7 @@ function createMovieCard(item) {
   watchBtn.className = `movie-card__watch-btn${alreadySaved ? ' is-active' : ''}`;
   watchBtn.setAttribute('aria-label', 'Add to Watchlist');
   watchBtn.setAttribute('aria-pressed', String(alreadySaved));
+  watchBtn.disabled = typeof CinevraCloud !== 'undefined' && CinevraCloud.state().phase !== 'ready';
   watchBtn.innerHTML =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v16l-7-4-7 4V5z"/></svg>';
   posterWrap.appendChild(watchBtn);
@@ -1726,10 +1731,10 @@ function createMovieCard(item) {
 
   // tombol watchlist di dalam card (sibling dari posterLink, bukan nested
   // di dalamnya, jadi klik di sini gak ikut mentrigger navigasi <a>)
-  watchBtn.addEventListener('click', (event) => {
+  watchBtn.addEventListener('click', async (event) => {
     event.stopPropagation();
     const { metaText, ...savedItem } = item;
-    const nowActive = toggleWatchlist(savedItem);
+    const nowActive = await toggleWatchlist(savedItem);
     watchBtn.classList.toggle('is-active', nowActive);
     watchBtn.setAttribute('aria-pressed', String(nowActive));
     playWatchBtnPop(watchBtn);

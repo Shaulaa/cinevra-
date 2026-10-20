@@ -307,6 +307,12 @@ input:focus-visible {
   transition: color 250ms ease, background 250ms ease, box-shadow 250ms ease, transform 250ms ease;
 }
 
+@media (min-width: 1101px) and (max-width: 1360px) {
+  .navbar { gap: 16px; }
+  .navbar__links { gap: 0; }
+  .navbar__links a { padding-inline: 10px; white-space: nowrap; }
+}
+
 .navbar__links-icon {
   display: none; /* cuma kepake di menu mobile, lihat media query di bawah */
   flex-shrink: 0;
@@ -652,11 +658,14 @@ input:focus-visible {
 
 @media (max-width: 1100px) {
   .navbar {
-    --navbar-padding-inline: 20px;
-    padding: 14px var(--navbar-padding-inline);
-    gap: 12px;
+    --navbar-padding-inline: 16px;
+    padding: 12px var(--navbar-padding-inline);
+    gap: 8px;
     transition: transform 280ms ease;
   }
+
+  .navbar__logo { gap: 8px; font-size: 22px; }
+  .navbar__logo-icon { width: 28px; height: 28px; }
 
   /* header disembunyikan pas scroll ke bawah, muncul lagi pas scroll
      ke atas (class ini di-toggle dari main.js, lihat initNavbarAutoHide) */
@@ -672,12 +681,16 @@ input:focus-visible {
   .navbar__search.is-mobile-open {
     display: flex;
     position: fixed;
-    top: 68px;
+    top: calc(100% + 8px);
     left: 16px;
     right: 16px;
     width: auto;
     z-index: 106;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+    min-height: 52px;
+    padding: 12px 14px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-md);
+    box-shadow: none;
   }
 
   .navbar__search.is-mobile-open .navbar__search-close {
@@ -696,66 +709,108 @@ input:focus-visible {
     display: flex;
   }
 
+  .navbar__mobile-search-btn,
+  .navbar__toggle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .navbar__mobile-search-btn svg,
+  .navbar__surprise-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
   .navbar__links {
-    position: fixed;
-    top: 68px;
-    left: 16px;
-    right: 16px;
-    z-index: 105;
+    display: flex;
     flex-direction: column;
+    position: fixed;
+    top: calc(100% + 8px);
+    left: auto;
+    right: 16px;
+    width: min(360px, calc(100% - 32px));
+    z-index: 105;
     align-items: stretch;
-    gap: 4px;
+    gap: 2px;
     background: var(--bg-elevated);
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-sm);
-    padding: 12px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-    transform: translateY(-12px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    box-shadow: none;
+    transform: translateY(-8px);
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity var(--transition), transform var(--transition);
+    transition: opacity 180ms ease, transform 180ms ease;
   }
 
   .navbar__links.is-open {
     transform: translateY(0);
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
   }
 
   .navbar__links a {
-    padding: 13px 14px;
-    font-size: 15px;
+    min-width: 0;
+    min-height: 48px;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    gap: 12px;
+    transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
   }
 
-  /* di menu mobile dropdown udah ada indikator aktif sendiri (pill emas),
-     jadi underline ala desktop ini dimatikan biar gak dobel/berantakan */
+  /* Daftar sederhana dengan penanda kecil di halaman aktif. */
   .navbar__links a::after {
     display: none;
   }
 
-  .navbar__links-icon {
+  .navbar__links a:hover { background: var(--surface); }
+
+  .navbar__links a.is-active::after {
     display: block;
-    color: var(--text-muted);
+    position: static;
+    width: 4px;
+    height: 4px;
+    margin-left: auto;
+    background: var(--accent-gold-soft);
+    transform: none;
+    flex-shrink: 0;
   }
 
-  /* halaman yang lagi aktif ditandai isi solid warna emas,
-     bukan cuma garis tipis di kiri */
+  .navbar__links a:hover .navbar__links-icon { transform: none; }
+
+  .navbar__links-icon {
+    display: block;
+    width: 19px;
+    height: 19px;
+    color: var(--text-secondary);
+  }
+
+  /* Warna emas menandai halaman yang sedang dibuka. */
   .navbar__links a.is-active {
-    background: var(--accent-gold);
-    color: #0a0a0d;
-    font-weight: 700;
+    background: var(--surface);
+    color: var(--accent-gold-soft);
+    font-weight: 500;
   }
 
   .navbar__links a.is-active .navbar__links-icon {
-    color: #0a0a0d;
+    color: var(--accent-gold-soft);
   }
 
   /* pas item menu ditekan (jari masih nempel di layar), langsung
      "menyala" dulu sebagai feedback sebelum halamannya berpindah */
   .navbar__links a:active {
-    background: rgba(227, 179, 65, 0.16);
+    background: var(--surface-hover);
     color: var(--text-primary);
-    box-shadow: inset 0 0 0 1px rgba(227, 179, 65, 0.4);
+    box-shadow: none;
   }
 
   .navbar__links a:active .navbar__links-icon {
@@ -770,8 +825,8 @@ input:focus-visible {
      search-mobile biar seragam, tapi tetap kelihatan (beda dari
      watchlist-link yang disembunyikan total) */
   .navbar__surprise-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     padding: 0;
     justify-content: center;
     border-radius: var(--radius-sm);
@@ -788,9 +843,50 @@ input:focus-visible {
   .navbar__surprise-btn-text {
     display: none;
   }
+
 }
 
 /* ---------- DROPDOWN FILTER ---------- */
+.navbar__account { position: relative; flex: 0 0 40px; }
+.navbar__account-trigger { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: 50%; color: var(--accent-gold-soft); cursor: pointer; list-style: none; transition: background 180ms ease, border-color 180ms ease; }
+.navbar__account-menu .navbar__account-trigger { background: rgba(227, 179, 65, 0.1); border-color: rgba(227, 179, 65, 0.45); font-size: 15px; font-weight: 600; }
+.navbar__account-menu.is-open .navbar__account-trigger { border-color: var(--accent-gold); background: rgba(227, 179, 65, 0.18); }
+.navbar__account-trigger::-webkit-details-marker { display: none; }
+.navbar__account-trigger:hover { background: var(--surface); border-color: var(--accent-gold); }
+.navbar__account-trigger:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
+.navbar__account-panel { position: absolute; z-index: 5; top: calc(100% + 12px); right: 0; width: min(264px, calc(100vw - 32px)); display: grid; gap: 4px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-elevated); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25); }
+.navbar__account-panel[hidden] { display: none; }
+.navbar__account-panel span { padding: 8px; color: var(--text-secondary); font-size: 13px; overflow-wrap: anywhere; }
+.navbar__account-panel a, .navbar__account-panel button { text-align: left; min-height: 44px; padding: 10px 12px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--text-primary); font: inherit; }
+.navbar__account-panel a:hover, .navbar__account-panel button:hover { background: var(--surface-hover); }
+.navbar__links .navbar__account-mobile { display: none; }
+.library-banner { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 24px; background: var(--surface); color: var(--text-secondary); font-size: 14px; }
+.library-banner[hidden] { display: none; }
+.library-banner a, .library-banner button { color: var(--accent-gold-soft); min-height: 44px; display: inline-flex; align-items: center; font: inherit; background: transparent; border: 0; text-decoration: underline; text-underline-offset: 4px; }
+.account-switching body { visibility: hidden; }
+body[data-library-state="loading"] main[data-personal-library], body[data-library-state="error"] main[data-personal-library] { display: none; }
+@media(max-width: 1100px) {
+  .navbar__account { display: none; }
+  .navbar__surprise-btn { flex-shrink: 0; }
+  .navbar__links .navbar__account-mobile {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    min-height: 54px;
+    margin-top: 8px;
+    padding: 16px 14px 8px;
+    gap: 12px;
+    background: transparent;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    text-align: left;
+  }
+  .navbar__links .navbar__account-mobile::after {
+    display: none;
+  }
+  .navbar__links { max-height: calc(100vh - 100px); max-height: calc(100dvh - 100px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border) var(--bg-elevated); }
+}
+
 .space-nav {
   display: flex;
   flex-wrap: wrap;
@@ -1998,7 +2094,7 @@ img.img-fallback {
 
   .navbar__logo {
     gap: 8px;
-    font-size: 22px;
+    font-size: 20px;
   }
 
   .dialog--share {

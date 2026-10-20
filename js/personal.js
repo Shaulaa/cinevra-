@@ -19,7 +19,7 @@ function normalizePersonalRecord(record) {
 
 function getPersonalRecord(type, id) {
   try {
-    const records = JSON.parse(localStorage.getItem('cinevra_personal'));
+    const records = JSON.parse((typeof CinevraCloud !== 'undefined' ? CinevraCloud.read('cinevra_personal') : localStorage.getItem('cinevra_personal')));
     const record = records && records[`${type}:${id}`];
     return normalizePersonalRecord(record);
   } catch {
@@ -35,7 +35,7 @@ function isDiaryDate(value) {
 
 // Cuma baca catatan yang ada, progres episode saja bukan entri diary.
 function getDiaryEntries() {
-  const records = JSON.parse(localStorage.getItem('cinevra_personal') || '{}');
+  const records = JSON.parse((typeof CinevraCloud !== 'undefined' ? CinevraCloud.read('cinevra_personal') : localStorage.getItem('cinevra_personal')) || '{}');
   if (!records || typeof records !== 'object' || Array.isArray(records)) throw new Error('Invalid personal records');
   return Object.entries(records).flatMap(([key, value]) => {
     const match = /^(movie|tv):([1-9]\d*)$/.exec(key);
@@ -49,9 +49,10 @@ function getDiaryEntries() {
 
 function savePersonalRecord(type, id, patch) {
   let records;
-  try { records = JSON.parse(localStorage.getItem('cinevra_personal')); } catch { records = {}; }
+  try { records = JSON.parse((typeof CinevraCloud !== 'undefined' ? CinevraCloud.read('cinevra_personal') : localStorage.getItem('cinevra_personal'))); } catch { records = {}; }
   if (!records || typeof records !== 'object' || Array.isArray(records)) records = {};
   records[`${type}:${id}`] = { ...getPersonalRecord(type, id), ...patch };
+  if (typeof CinevraCloud !== 'undefined') return CinevraCloud.write('cinevra_personal', JSON.stringify(records));
   localStorage.setItem('cinevra_personal', JSON.stringify(records));
 }
 
@@ -59,6 +60,8 @@ function initPersonalDetails(item, details) {
   const section = document.getElementById('personalSection');
   section.hidden = false;
   const form = document.getElementById('personalForm');
+  if (typeof CinevraCloud !== 'undefined' && CinevraCloud.state().user) section.querySelector('p').textContent = 'Your review is private and saved to your account.';
+  if (typeof CinevraCloud !== 'undefined' && CinevraCloud.state().phase !== 'ready') form.querySelectorAll('input,select,textarea,button').forEach(control => control.disabled = true);
   const rating = document.getElementById('personalRating');
   const date = document.getElementById('personalDate');
   const note = document.getElementById('personalNote');
@@ -75,22 +78,23 @@ function initPersonalDetails(item, details) {
     rating.focus({ preventScroll: true });
   }
   const status = document.getElementById('personalStatus');
-  form.addEventListener('submit', event => {
+  form.addEventListener('submit', async event => {
     event.preventDefault();
     try {
-      savePersonalRecord(item.type, item.id, {
+      await savePersonalRecord(item.type, item.id, {
         rating: rating.value ? Number(rating.value) : '', watchedOn: date.value, note: note.value.trim(),
         item: normalizeDiaryItem({ title: item.title, posterPath: item.posterPath, year: (item.releaseDate || '').slice(0, 4) }),
       });
-      status.textContent = 'Saved on this browser';
-    } catch { status.textContent = 'Could not save. Browser storage is unavailable or full.'; }
+      status.textContent = typeof CinevraCloud !== 'undefined' && CinevraCloud.state().user ? 'Saved to your account' : 'Saved on this browser';
+      form.dataset && (form.dataset.dirty = 'false');
+    } catch (error) { status.textContent = error.cinevra ? error.message : 'Could not save. Browser storage is unavailable or full.'; }
   });
-  document.getElementById('personalClear').addEventListener('click', () => {
+  document.getElementById('personalClear').addEventListener('click', async () => {
     try {
-      savePersonalRecord(item.type, item.id, { rating: '', watchedOn: '', note: '' });
+      await savePersonalRecord(item.type, item.id, { rating: '', watchedOn: '', note: '' });
       populate();
       status.textContent = 'Personal review cleared';
-    } catch { status.textContent = 'Could not clear your review. Please try again.'; }
+    } catch (error) { status.textContent = error.cinevra ? error.message : 'Could not clear your review. Please try again.'; }
   });
   if (item.type === 'tv') initEpisodeTracker(item.id, details);
 }
@@ -120,9 +124,9 @@ function initEpisodeTracker(id, details) {
     toggle.textContent = episodes.length && episodes.every(episode => watched.has(`${select.value}:${episode.episode_number}`)) ? 'Clear season' : 'Mark season watched';
     progress();
   };
-  const save = keys => {
-    try { savePersonalRecord('tv', id, { episodes: [...keys] }); status.textContent = 'Progress saved on this browser'; }
-    catch { status.textContent = 'Could not save progress. Browser storage is unavailable or full.'; }
+  const save = async keys => {
+    try { await savePersonalRecord('tv', id, { episodes: [...keys] }); status.textContent = typeof CinevraCloud !== 'undefined' && CinevraCloud.state().user ? 'Progress saved to your account' : 'Progress saved on this browser'; }
+    catch (error) { status.textContent = error.cinevra ? error.message : 'Could not save progress. Browser storage is unavailable or full.'; }
     update();
   };
   const load = async () => {
@@ -146,10 +150,10 @@ function initEpisodeTracker(id, details) {
         text.textContent = `Episode ${episode.episode_number} · ${episode.name || 'Untitled'}`;
         label.append(input, text);
         list.append(label);
-        input.addEventListener('change', () => {
+        input.addEventListener('change', async () => {
           const keys = new Set(getPersonalRecord('tv', id).episodes);
           if (input.checked) keys.add(input.value); else keys.delete(input.value);
-          save(keys);
+          await save(keys);
         });
       });
       toggle.disabled = episodes.length === 0;
@@ -159,12 +163,12 @@ function initEpisodeTracker(id, details) {
       if (version === request) status.textContent = 'Could not load episodes. Use Retry to try again.';
     }
   };
-  toggle.addEventListener('click', () => {
+  toggle.addEventListener('click', async () => {
     const keys = new Set(getPersonalRecord('tv', id).episodes);
     const seasonKeys = episodes.map(episode => `${select.value}:${episode.episode_number}`);
     const clear = seasonKeys.every(key => keys.has(key));
     seasonKeys.forEach(key => { if (clear) keys.delete(key); else keys.add(key); });
-    save(keys);
+    await save(keys);
   });
   select.addEventListener('change', load);
   document.getElementById('episodeRetry').addEventListener('click', load);

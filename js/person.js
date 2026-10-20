@@ -6,7 +6,7 @@
 
 let filmographyItems = []; // menyimpan semua data filmography, difilter ulang saat ganti tab
 
-document.addEventListener('DOMContentLoaded', () => {
+CinevraCloud.boot( () => {
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
 

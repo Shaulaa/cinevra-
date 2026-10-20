@@ -30,7 +30,7 @@ function syncSearchQueryState() {
   window.history.replaceState({}, '', nextUrl);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+CinevraCloud.boot( () => {
   const params = new URLSearchParams(window.location.search);
   searchState.query = (params.get('q') || '').trim();
   const urlTab = params.get('tab');

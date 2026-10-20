@@ -26,13 +26,21 @@ if (!apiKey) {
 
 const outputPath = path.join(__dirname, '..', 'js', 'config.js');
 
-const fileContent = `// File ini di-generate OTOMATIS saat proses build oleh
-// scripts/generate-config.js. JANGAN diedit manual di server produksi,
-// dan file ini TIDAK disimpan di git (lihat .gitignore).
-window.CINEVRA_CONFIG = {
-  TMDB_API_KEY: '${apiKey}',
+const config = {
+  TMDB_API_KEY: apiKey,
+  SUPABASE_URL: process.env.SUPABASE_URL || '',
+  SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY || '',
 };
-`;
+if (Boolean(config.SUPABASE_URL) !== Boolean(config.SUPABASE_PUBLISHABLE_KEY)) throw new Error('Set both SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY.');
+if (config.SUPABASE_PUBLISHABLE_KEY) {
+  const key = config.SUPABASE_PUBLISHABLE_KEY;
+  let legacyAnon = false;
+  try { legacyAnon = JSON.parse(Buffer.from(key.split('.')[1], 'base64url').toString()).role === 'anon'; } catch {}
+  if (!key.startsWith('sb_publishable_') && !legacyAnon) throw new Error('Use a Supabase publishable key, never a secret or service_role key.');
+  const url = new URL(config.SUPABASE_URL);
+  if (url.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(url.hostname)) throw new Error('Use HTTPS for Supabase.');
+}
+const fileContent = '// Generated public browser configuration.\nwindow.CINEVRA_CONFIG = ' + JSON.stringify(config, null, 2) + ';\n';
 
 fs.writeFileSync(outputPath, fileContent);
 console.log(`[generate-config] js/config.js berhasil dibuat di ${outputPath}`);

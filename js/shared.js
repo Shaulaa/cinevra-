@@ -169,10 +169,10 @@ function showError(message) {
 /**
  * Handle import list
  */
-function handleImport() {
+async function handleImport() {
   if (!listData) return;
 
-  const result = importSharedList(listData);
+  const result = await importSharedList(listData);
   if (result.error) {
     showToast(result.error); // error already in Bahasa Indonesia from main.js
     return;
@@ -187,15 +187,4 @@ function handleImport() {
 }
 
 // Initialize saat page load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
-
-// Init navbar
-initNavbarToggle();
-initMobileSearchToggle();
-initNavbarSearch();
-initSurpriseMeButton();
-highlightActiveNavLink();
+CinevraCloud.boot(init);

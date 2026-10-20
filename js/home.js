@@ -12,7 +12,7 @@ let heroMovies = [];
 let heroIndex = 0;
 let heroAutoTimer = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+CinevraCloud.boot( () => {
   showPageProgress();
 
   Promise.allSettled([
@@ -117,8 +117,8 @@ function renderHero(index) {
   };
   const watchlistBtn = document.getElementById('heroWatchlistBtn');
   updateHeroWatchlistBtn(watchlistBtn, watchlistItem);
-  watchlistBtn.onclick = () => {
-    toggleWatchlist(watchlistItem);
+  watchlistBtn.onclick = async () => {
+    await toggleWatchlist(watchlistItem);
     updateHeroWatchlistBtn(watchlistBtn, watchlistItem);
     playWatchBtnPop(watchlistBtn);
   };

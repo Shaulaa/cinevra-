@@ -22,7 +22,7 @@ const reviewState = {
   totalPages: 1,
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+CinevraCloud.boot( () => {
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
   const type = params.get('type') === 'tv' ? 'tv' : 'movie';
@@ -207,8 +207,8 @@ function renderDetail(item) {
   };
   const watchlistBtn = document.getElementById('detailWatchlistBtn');
   updateDetailWatchlistBtn(watchlistBtn, watchlistItem);
-  watchlistBtn.addEventListener('click', () => {
-    toggleWatchlist(watchlistItem);
+  watchlistBtn.addEventListener('click', async () => {
+    await toggleWatchlist(watchlistItem);
     updateDetailWatchlistBtn(watchlistBtn, watchlistItem);
     playWatchBtnPop(watchlistBtn);
   });

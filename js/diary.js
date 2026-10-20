@@ -13,9 +13,11 @@ function filterDiaryEntries(entries, { query = '', type = 'all', year = '', orde
   });
 }
 
-document.addEventListener('DOMContentLoaded', initDiary);
+if (typeof CinevraCloud !== 'undefined') CinevraCloud.boot(initDiary);
+else document.addEventListener('DOMContentLoaded', initDiary);
 
 function initDiary() {
+  if (typeof CinevraCloud !== 'undefined' && CinevraCloud.state().user) document.querySelector('.diary-local-note').textContent = 'Your ratings, watch dates, and notes are private and saved to your account. Add or edit an entry from a title\'s detail page.';
   const timeline = document.getElementById('diaryTimeline');
   const empty = document.getElementById('diaryEmpty');
   const status = document.getElementById('diaryStatus');
@@ -88,7 +90,7 @@ function initDiary() {
     const known = [];
     for (const key of ['cinevra_watchlist', 'cinevra_lists', 'cinevra_recently_viewed']) {
       try {
-        const data = JSON.parse(localStorage.getItem(key));
+        const data = JSON.parse(typeof CinevraCloud !== 'undefined' ? CinevraCloud.read(key) : localStorage.getItem(key));
         if (Array.isArray(data)) known.push(...(key === 'cinevra_lists' ? data.flatMap(list => Array.isArray(list?.items) ? list.items : []) : data));
       } catch { /* Metadata tambahan boleh gagal tanpa menyembunyikan review. */ }
     }
