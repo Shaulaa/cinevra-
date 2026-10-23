@@ -2096,6 +2096,12 @@ img.img-fallback {
 .dialog--share .dialog__footer,
 .dialog--image-export .dialog__footer { margin-top: 0; }
 
+.dialog--share .dialog__hint,
+.dialog--image-export .dialog__hint { color: var(--text-secondary); }
+
+.dialog--share .btn,
+.dialog--image-export .btn { min-height: 44px; }
+
 /* ---------- IMAGE EXPORT ---------- */
 .dialog--image-export {
   width: min(94vw, 920px);
@@ -2186,7 +2192,15 @@ img.img-fallback {
   .template-btn svg { grid-row: 1 / 3; align-self: center; margin: 0; }
   .template-btn__desc { grid-column: 2; }
   .image-export-preview { height: 260px; }
-  .dialog--image-export .dialog__footer { flex-wrap: wrap; gap: 8px; }
+  .dialog--image-export .dialog__footer {
+    position: sticky;
+    bottom: 0;
+    padding-block: 12px;
+    background: var(--bg-elevated);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .dialog--image-export .dialog__footer > .btn { flex: 1 1 auto; }
 }
 
 /* ================= MOBILE RESPONSIVE FIXES ================= */

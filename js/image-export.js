@@ -47,7 +47,7 @@ async function generateListImage(list, template = 'minimal') {
   if (list.description && template !== 'grid') {
     ctx.fillStyle = theme.muted;
     ctx.font = `400 22px ${theme.body}`;
-    drawImageText(ctx, list.description, 60, headingY + lines * 62 + 20, landscape ? 480 : canvas.width - 120, 32, landscape ? 3 : 2);
+    drawImageText(ctx, list.description, 60, headingY + (lines - 1) * 62 + 56, landscape ? 480 : canvas.width - 120, 32, landscape ? 3 : 2);
   }
 
   const items = list.items.slice(0, layout.limit);
@@ -66,7 +66,7 @@ async function generateListImage(list, template = 'minimal') {
       const titleLines = drawImageText(ctx, item.title, x + 160, y + 32, 250, 31, 3);
       ctx.fillStyle = theme.muted;
       ctx.font = `400 19px ${theme.body}`;
-      ctx.fillText([item.year, item.type === 'tv' ? 'TV show' : 'Movie'].filter(Boolean).join(' ? '), x + 160, y + 56 + titleLines * 31);
+      ctx.fillText([item.year, item.type === 'tv' ? 'TV show' : 'Movie'].filter(Boolean).join(' \u00b7 '), x + 160, y + 56 + titleLines * 31);
       if (Number(item.rating) > 0) {
         ctx.fillStyle = theme.gold;
         ctx.fillText(`${Number(item.rating).toFixed(1)} / 10`, x + 160, y + 90 + titleLines * 31);
@@ -109,22 +109,24 @@ async function generateListImage(list, template = 'minimal') {
 
 // Batasi jumlah baris sekaligus potong kata panjang supaya teks tidak menabrak poster.
 function drawImageText(ctx, value, x, y, maxWidth, lineHeight, maxLines) {
-  const characters = Array.from(String(value || '').replace(/\s+/g, ' ').trim());
+  let remaining = String(value || '').replace(/\s+/g, ' ').trim();
   const lines = [];
-  let line = '';
-  for (const character of characters) {
-    if (line && ctx.measureText(line + character).width > maxWidth) {
-      lines.push(line.trim());
-      line = '';
-      if (lines.length === maxLines) break;
+  while (remaining && lines.length < maxLines) {
+    const characters = Array.from(remaining);
+    let fit = 0;
+    while (fit < characters.length && ctx.measureText(characters.slice(0, fit + 1).join('')).width <= maxWidth) fit++;
+    fit = Math.max(1, fit);
+    if (fit < characters.length) {
+      const wordEnd = characters.slice(0, fit + 1).lastIndexOf(' ');
+      if (wordEnd > 0) fit = wordEnd;
     }
-    line += character;
+    lines.push(characters.slice(0, fit).join('').trimEnd());
+    remaining = characters.slice(fit).join('').trimStart();
   }
-  if (lines.length < maxLines && line) lines.push(line.trim());
-  if (lines.length === maxLines && lines.join('').length < characters.join('').replace(/ /g, '').length) {
-    let last = lines[maxLines - 1];
-    while (last && ctx.measureText(last + '?').width > maxWidth) last = Array.from(last).slice(0, -1).join('');
-    lines[maxLines - 1] = last.trimEnd() + '?';
+  if (remaining && lines.length) {
+    let last = Array.from(lines[lines.length - 1]);
+    while (last.length && ctx.measureText(last.join('') + '\u2026').width > maxWidth) last.pop();
+    lines[lines.length - 1] = last.join('').trimEnd() + '\u2026';
   }
   lines.forEach((text, index) => ctx.fillText(text, x, y + index * lineHeight));
   return lines.length;
@@ -270,8 +272,8 @@ async function openImageExportDialog(listId) {
     retry.hidden = true;
     preview.hidden = true;
     stage.setAttribute('aria-busy', 'true');
-    status.textContent = 'Creating your preview?';
-    caption.textContent = `${template.width} ? ${template.height} ? PNG`;
+    status.textContent = 'Creating your preview\u2026';
+    caption.textContent = `${template.width} \u00d7 ${template.height} \u00b7 PNG`;
     templates.querySelectorAll('button').forEach(button => {
       const active = button.dataset.template === selected;
       button.classList.toggle('is-active', active);

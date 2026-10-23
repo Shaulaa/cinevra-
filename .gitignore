@@ -21,3 +21,7 @@ supabase/.temp/
 
 # Kiro IDE
 .kiro/
+
+# Hasil pemeriksaan tampilan lokal
+/.tmp-share/
+/.tmp-share-browser.cjs

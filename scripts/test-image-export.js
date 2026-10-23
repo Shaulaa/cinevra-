@@ -41,5 +41,16 @@ vm.runInContext('drawPoster = async (ctx, item, x, y, width, height) => posterBo
     }
   }
   await assert.rejects(vm.runInContext("generateListImage(list, 'unknown')", context), /Unknown template/);
+  const drawn = [];
+  context.textCtx = { measureText: text => ({ width: Array.from(text).length * 10 }), fillText: text => drawn.push(text) };
+  vm.runInContext("drawImageText(textCtx, 'Worth watching again', 0, 0, 170, 20, 2)", context);
+  assert.deepEqual(drawn, ['Worth watching', 'again']);
+  drawn.length = 0;
+  vm.runInContext("drawImageText(textCtx, 'A'.repeat(100), 0, 0, 100, 20, 2)", context);
+  assert.equal(drawn.length, 2);
+  assert.ok(drawn.every(line => Array.from(line).length <= 10));
+  assert.ok(drawn[1].endsWith('\u2026'));
+  context.emptyCanvas = { toBlob: callback => callback(null) };
+  await assert.rejects(vm.runInContext('canvasToBlob(emptyCanvas)', context), /Could not create image/);
   console.log('Image export passed for all four templates with short and long lists, bounded posters and non-overlapping grid');
 })().catch(error => { console.error(error); process.exitCode = 1; });
