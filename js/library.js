@@ -162,7 +162,11 @@ function openShareModal(listId) {
   body.className = 'dialog__body';
 
   // Header
-  body.appendChild(buildDialogHeader(`Share "${list.name}"`, `${list.items.length} items`));
+  const header = buildDialogHeader('Share your list', 'Send a link or create an image to keep.');
+  header.querySelector('.dialog__title').id = 'shareDialogTitle';
+  dialog.setAttribute('aria-labelledby', 'shareDialogTitle');
+  body.appendChild(header);
+  body.appendChild(buildShareListSummary(list));
 
   // Shareable URL section
   const urlSection = document.createElement('div');
@@ -170,7 +174,8 @@ function openShareModal(listId) {
 
   const urlTitle = document.createElement('h3');
   urlTitle.className = 'share-section__title';
-  urlTitle.textContent = 'Share link';
+  urlTitle.textContent = 'List link';
+  urlTitle.id = 'shareLinkLabel';
   urlSection.appendChild(urlTitle);
 
   const shareUrl = encodeListToURL(list);
@@ -183,26 +188,27 @@ function openShareModal(listId) {
   urlInput.value = shareUrl;
   urlInput.readOnly = true;
   urlInput.id = 'shareUrlInput';
+  urlInput.setAttribute('aria-labelledby', 'shareLinkLabel');
 
   const copyBtn = document.createElement('button');
-  copyBtn.className = 'btn btn--outline';
-  copyBtn.textContent = 'Copy';
+  copyBtn.className = 'btn btn--primary';
+  copyBtn.textContent = 'Copy link';
   copyBtn.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      copyBtn.textContent = 'Tersalin!';
+      copyBtn.textContent = 'Copied';
       showToast('Link berhasil disalin ke clipboard');
       setTimeout(() => {
-        copyBtn.textContent = 'Copy';
+        copyBtn.textContent = 'Copy link';
       }, 2000);
     } catch (error) {
       // Fallback untuk browser yang tidak support clipboard API
       urlInput.select();
       document.execCommand('copy');
-      copyBtn.textContent = 'Tersalin!';
+      copyBtn.textContent = 'Copied';
       showToast('Link berhasil disalin ke clipboard');
       setTimeout(() => {
-        copyBtn.textContent = 'Copy';
+        copyBtn.textContent = 'Copy link';
       }, 2000);
     }
   });
@@ -210,6 +216,10 @@ function openShareModal(listId) {
   urlContainer.appendChild(urlInput);
   urlContainer.appendChild(copyBtn);
   urlSection.appendChild(urlContainer);
+  const linkHint = document.createElement('p');
+  linkHint.className = 'dialog__hint';
+  linkHint.textContent = 'Anyone with the link can view this list.';
+  urlSection.appendChild(linkHint);
   body.appendChild(urlSection);
 
   // Social media section
@@ -249,7 +259,7 @@ function openShareModal(listId) {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
     </svg>
-    Twitter
+    X / Twitter
   `;
   twitterBtn.addEventListener('click', () => shareToTwitter(list, shareUrl));
   socialButtons.appendChild(twitterBtn);
@@ -283,27 +293,28 @@ function openShareModal(listId) {
 
   // Image export section
   const imageSection = document.createElement('div');
-  imageSection.className = 'share-section';
+  imageSection.className = 'share-section share-section--image';
 
   const imageTitle = document.createElement('h3');
   imageTitle.className = 'share-section__title';
-  imageTitle.textContent = 'Export as image';
+  imageTitle.textContent = 'Make it a picture';
   imageSection.appendChild(imageTitle);
 
   const imageDesc = document.createElement('p');
   imageDesc.className = 'dialog__hint';
-  imageDesc.textContent = 'Generate beautiful images to share on social media.';
+  imageDesc.textContent = 'Choose a layout, preview your posters, then download.';
   imageSection.appendChild(imageDesc);
 
   const imageBtn = document.createElement('button');
-  imageBtn.className = 'btn btn--outline';
+  imageBtn.className = 'btn btn--outline share-image-action';
+  imageBtn.disabled = list.items.length === 0;
   imageBtn.innerHTML = `
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
       <circle cx="8.5" cy="8.5" r="1.5"></circle>
       <polyline points="21 15 16 10 5 21"></polyline>
     </svg>
-    Create Image
+    Create image
   `;
   imageBtn.addEventListener('click', () => {
     dialog.close();
@@ -331,12 +342,42 @@ function openShareModal(listId) {
   // Focus copy button
   copyBtn.focus();
 
-  // Close on Escape
-  dialog.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      dialog.close();
+
+}
+
+
+// Ringkasan yang sama dipakai di dialog share dan pembuat gambar.
+function buildShareListSummary(list) {
+  const summary = document.createElement('div');
+  summary.className = 'share-list-summary';
+  const posters = document.createElement('div');
+  posters.className = 'share-list-summary__posters';
+  posters.setAttribute('aria-hidden', 'true');
+  list.items.slice(0, 3).forEach(item => {
+    const frame = document.createElement('span');
+    frame.className = 'share-list-summary__poster';
+    frame.textContent = Array.from(item.title || '?')[0];
+    const url = getImageUrl(item.posterPath, 'posterSmall');
+    if (url) {
+      const image = document.createElement('img');
+      image.src = url;
+      image.alt = '';
+      image.addEventListener('error', () => image.remove());
+      frame.appendChild(image);
     }
+    posters.appendChild(frame);
   });
+  const info = document.createElement('div');
+  info.className = 'share-list-summary__info';
+  const name = document.createElement('p');
+  name.className = 'share-list-summary__name';
+  name.textContent = list.name;
+  const count = document.createElement('p');
+  count.className = 'share-list-summary__meta';
+  count.textContent = `${list.items.length} ${list.items.length === 1 ? 'title' : 'titles'}`;
+  info.append(name, count);
+  summary.append(posters, info);
+  return summary;
 }
 
 

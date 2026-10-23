@@ -1,456 +1,181 @@
 /* =========================================================
-  CINEVRA - js/image-export.js
-   Canvas-based image export untuk share list ke social media.
-   4 template: Minimal, Detailed, Grid, Collage
+   CINEVRA gambar daftar untuk dibagikan
+   Warna dan font mengikuti token tampilan situs.
    ========================================================= */
 
-/**
- * Generate image dari list dengan template tertentu.
- * @param {Object} list - List object dengan id, name, items
- * @param {string} template - 'minimal' | 'detailed' | 'grid' | 'collage'
- * @returns {Promise<Blob>} - Image blob untuk download/share
- */
+const LIST_IMAGE_TEMPLATES = [
+  { id: 'minimal', name: 'Minimal', desc: 'Landscape', width: 1200, height: 630, limit: 3, icon: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h4M7 14h7"/>' },
+  { id: 'detailed', name: 'Detailed', desc: 'Portrait', width: 1080, height: 1350, limit: 6, icon: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/>' },
+  { id: 'grid', name: 'Grid', desc: 'Square', width: 1080, height: 1080, limit: 16, icon: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
+  { id: 'collage', name: 'Collage', desc: 'Poster showcase', width: 1200, height: 1200, limit: 5, icon: '<rect x="3" y="3" width="8" height="18" rx="1"/><rect x="14" y="3" width="7" height="8" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
+];
+
 async function generateListImage(list, template = 'minimal') {
-  switch (template) {
-    case 'minimal':
-      return generateMinimalImage(list);
-    case 'detailed':
-      return generateDetailedImage(list);
-    case 'grid':
-      return generateGridImage(list);
-    case 'collage':
-      return generateCollageImage(list);
-    default:
-      throw new Error(`Unknown template: ${template}`);
+  const layout = LIST_IMAGE_TEMPLATES.find(option => option.id === template);
+  if (!layout) throw new Error(`Unknown template: ${template}`);
+  const styles = getComputedStyle(document.documentElement);
+  const token = name => styles.getPropertyValue(name).trim();
+  const theme = {
+    bg: token('--bg'), surface: token('--surface'), border: token('--border'),
+    text: token('--text-primary'), muted: token('--text-secondary'), gold: token('--accent-gold'),
+    display: token('--font-display'), body: token('--font-body'),
+  };
+  if (document.fonts) {
+    await Promise.all([document.fonts.load(`600 56px ${theme.display}`), document.fonts.load(`500 24px ${theme.body}`)]);
   }
-}
-
-/**
- * Template 1: Minimal (Twitter card 1200x630)
- * Background gradient + list name + item count + 4 poster thumbnails
- */
-async function generateMinimalImage(list) {
   const canvas = document.createElement('canvas');
-  canvas.width = 1200;
-  canvas.height = 630;
+  canvas.width = layout.width;
+  canvas.height = layout.height;
   const ctx = canvas.getContext('2d');
-
-  // Background gradient
-  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, '#0f1419');
-  gradient.addColorStop(1, '#1a1f29');
-  ctx.fillStyle = gradient;
+  ctx.fillStyle = theme.bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Logo/Brand (top left)
-  ctx.fillStyle = '#e50914';
-  ctx.font = 'bold 32px Arial, sans-serif';
-  ctx.fillText('CINEVRA', 50, 60);
-
-  // List name (center, large)
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 56px Arial, sans-serif';
-  ctx.textAlign = 'center';
-  const listName = truncateText(list.name, 30);
-  ctx.fillText(listName, canvas.width / 2, canvas.height / 2 - 80);
-
-  // Item count (below name)
-  ctx.fillStyle = '#a0a0a0';
-  ctx.font = '28px Arial, sans-serif';
-  ctx.fillText(`${list.items.length} titles`, canvas.width / 2, canvas.height / 2 - 30);
-
-  // 4 poster thumbnails (bottom, centered)
-  const posterWidth = 120;
-  const posterHeight = 180;
-  const gap = 20;
-  const totalWidth = (posterWidth * 4) + (gap * 3);
-  const startX = (canvas.width - totalWidth) / 2;
-  const startY = canvas.height - posterHeight - 60;
-
-  const displayItems = list.items.slice(0, 4);
-  await Promise.all(
-    displayItems.map((item, index) =>
-      drawPoster(ctx, item, startX + (posterWidth + gap) * index, startY, posterWidth, posterHeight)
-    )
-  );
-
-  return canvasToBlob(canvas);
-}
-
-/**
- * Template 2: Detailed (Instagram portrait 1080x1350)
- * List name + description + 6 items dengan poster + title
- */
-async function generateDetailedImage(list) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1080;
-  canvas.height = 1350;
-  const ctx = canvas.getContext('2d');
-
-  // Background
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, '#0f1419');
-  gradient.addColorStop(1, '#1a1f29');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Header section
-  ctx.fillStyle = '#e50914';
-  ctx.font = 'bold 28px Arial, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('CINEVRA', 60, 80);
-
-  // List name
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 48px Arial, sans-serif';
-  const listName = truncateText(list.name, 22);
-  wrapText(ctx, listName, 60, 160, canvas.width - 120, 60);
-
-  // Item count
-  ctx.fillStyle = '#a0a0a0';
-  ctx.font = '24px Arial, sans-serif';
-  ctx.fillText(`${list.items.length} titles`, 60, 240);
-
-  // Divider line
-  ctx.strokeStyle = '#333';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(60, 280);
-  ctx.lineTo(canvas.width - 60, 280);
-  ctx.stroke();
-
-  // Grid of 6 items (2 columns x 3 rows)
-  const posterWidth = 160;
-  const posterHeight = 240;
-  const colGap = 60;
-  const rowGap = 40;
-  const col1X = 60;
-  const col2X = col1X + posterWidth + colGap + 180; // 180 for text space
-  let currentY = 340;
-
-  const displayItems = list.items.slice(0, 6);
-  
-  for (let i = 0; i < displayItems.length; i++) {
-    const item = displayItems[i];
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const x = col === 0 ? col1X : col2X;
-    const y = currentY + row * (posterHeight + rowGap);
-
-    // Draw poster
-    await drawPoster(ctx, item, x, y, posterWidth, posterHeight);
-
-    // Draw title next to poster
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 20px Arial, sans-serif';
-    ctx.textAlign = 'left';
-    const titleLines = wrapText(
-      ctx,
-      truncateText(item.title, 25),
-      x + posterWidth + 20,
-      y + 30,
-      160,
-      28
-    );
-
-    // Draw year/rating
-    ctx.fillStyle = '#a0a0a0';
-    ctx.font = '16px Arial, sans-serif';
-    const metaY = y + 30 + titleLines * 28 + 10;
-    ctx.fillText(item.year || 'N/A', x + posterWidth + 20, metaY);
-    
-    // Rating with star
-    if (item.rating) {
-      ctx.fillStyle = '#ffd700';
-      ctx.fillText('★', x + posterWidth + 20, metaY + 25);
-      ctx.fillStyle = '#a0a0a0';
-      ctx.fillText(formatRating(item.rating), x + posterWidth + 40, metaY + 25);
-    }
-  }
-
-  return canvasToBlob(canvas);
-}
-
-/**
- * Template 3: Grid (Instagram square 1080x1080)
- * 4x4 grid of posters (16 items max)
- */
-async function generateGridImage(list) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1080;
-  canvas.height = 1080;
-  const ctx = canvas.getContext('2d');
-
-  // Background
-  ctx.fillStyle = '#0f1419';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Header bar
-  ctx.fillStyle = '#1a1f29';
-  ctx.fillRect(0, 0, canvas.width, 120);
-
-  // Logo
-  ctx.fillStyle = '#e50914';
-  ctx.font = 'bold 28px Arial, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('CINEVRA', 40, 50);
-
-  // List name
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 32px Arial, sans-serif';
-  const listName = truncateText(list.name, 30);
-  ctx.fillText(listName, 40, 95);
-
-  // Item count (right side)
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = theme.gold;
+  ctx.font = `600 32px ${theme.display}`;
+  ctx.fillText('Cinevra', 60, 72);
+  ctx.fillStyle = theme.muted;
+  ctx.font = `500 19px ${theme.body}`;
   ctx.textAlign = 'right';
-  ctx.fillStyle = '#a0a0a0';
-  ctx.font = '24px Arial, sans-serif';
-  ctx.fillText(`${list.items.length} titles`, canvas.width - 40, 75);
+  ctx.fillText(`${list.items.length} ${list.items.length === 1 ? 'title' : 'titles'}`, canvas.width - 60, 70);
+  ctx.textAlign = 'left';
 
-  // Grid of posters (4x4)
-  const gridSize = 4;
-  const posterSize = 220;
-  const gap = 10;
-  const gridWidth = (posterSize * gridSize) + (gap * (gridSize - 1));
-  const startX = (canvas.width - gridWidth) / 2;
-  const startY = 150;
+  const landscape = template === 'minimal';
+  ctx.fillStyle = theme.text;
+  ctx.font = `600 ${landscape ? 54 : 52}px ${theme.display}`;
+  const headingY = landscape ? 202 : 148;
+  const lines = drawImageText(ctx, list.name, 60, headingY, landscape ? 510 : canvas.width - 120, 62, 2);
+  if (list.description && template !== 'grid') {
+    ctx.fillStyle = theme.muted;
+    ctx.font = `400 22px ${theme.body}`;
+    drawImageText(ctx, list.description, 60, headingY + lines * 62 + 20, landscape ? 480 : canvas.width - 120, 32, landscape ? 3 : 2);
+  }
 
-  const displayItems = list.items.slice(0, 16);
-
-  await Promise.all(
-    displayItems.map((item, index) => {
-      const row = Math.floor(index / gridSize);
-      const col = index % gridSize;
-      const x = startX + col * (posterSize + gap);
-      const y = startY + row * (posterSize + gap);
-      return drawPoster(ctx, item, x, y, posterSize, posterSize * 1.5);
-    })
-  );
-
-  // If less than 16 items, show count on remaining slots
-  if (displayItems.length < 16) {
-    for (let i = displayItems.length; i < 16; i++) {
-      const row = Math.floor(i / gridSize);
-      const col = i % gridSize;
-      const x = startX + col * (posterSize + gap);
-      const y = startY + row * (posterSize + gap);
-
-      // Empty slot
-      ctx.fillStyle = '#1a1f29';
-      ctx.fillRect(x, y, posterSize, posterSize * 1.5);
+  const items = list.items.slice(0, layout.limit);
+  if (template === 'minimal') {
+    const width = 148, gap = 18;
+    const startX = 630 + (3 - items.length) * (width + gap) / 2;
+    await Promise.all(items.map((item, index) => drawPoster(ctx, item, startX + index * (width + gap), 172, width, 222, theme)));
+  } else if (template === 'detailed') {
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
+      const x = 60 + (index % 2) * 492;
+      const y = 360 + Math.floor(index / 2) * 276;
+      await drawPoster(ctx, item, x, y, 140, 210, theme);
+      ctx.fillStyle = theme.text;
+      ctx.font = `600 23px ${theme.body}`;
+      const titleLines = drawImageText(ctx, item.title, x + 160, y + 32, 250, 31, 3);
+      ctx.fillStyle = theme.muted;
+      ctx.font = `400 19px ${theme.body}`;
+      ctx.fillText([item.year, item.type === 'tv' ? 'TV show' : 'Movie'].filter(Boolean).join(' ? '), x + 160, y + 56 + titleLines * 31);
+      if (Number(item.rating) > 0) {
+        ctx.fillStyle = theme.gold;
+        ctx.fillText(`${Number(item.rating).toFixed(1)} / 10`, x + 160, y + 90 + titleLines * 31);
+      }
+    }
+  } else if (template === 'grid') {
+    const columns = items.length <= 4 ? 2 : items.length <= 9 ? 3 : 4;
+    const rows = Math.ceil(items.length / columns);
+    const gap = 16;
+    const size = Math.min((960 - gap * (columns - 1)) / columns, (740 - gap * (rows - 1)) / rows);
+    const startX = (canvas.width - columns * size - (columns - 1) * gap) / 2;
+    await Promise.all(items.map((item, index) => drawPoster(ctx, item, startX + (index % columns) * (size + gap), 240 + Math.floor(index / columns) * (size + gap), size, size, theme)));
+  } else if (items.length) {
+    if (items.length === 1) {
+      await drawPoster(ctx, items[0], 360, 320, 480, 720, theme);
+    } else {
+      await drawPoster(ctx, items[0], 104, 320, 480, 720, theme);
+      await Promise.all(items.slice(1).map((item, index) => drawPoster(ctx, item, 608 + (index % 2) * 256, 320 + Math.floor(index / 2) * 372, 232, 348, theme)));
     }
   }
 
-  return canvasToBlob(canvas);
-}
-
-/**
- * Template 4: Collage (1200x1200)
- * Large central poster + smaller surrounding posters + list info
- */
-async function generateCollageImage(list) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1200;
-  canvas.height = 1200;
-  const ctx = canvas.getContext('2d');
-
-  // Background
-  const gradient = ctx.createRadialGradient(
-    canvas.width / 2,
-    canvas.height / 2,
-    0,
-    canvas.width / 2,
-    canvas.height / 2,
-    canvas.width / 2
-  );
-  gradient.addColorStop(0, '#1a1f29');
-  gradient.addColorStop(1, '#0f1419');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  if (list.items.length === 0) {
-    // Empty list fallback
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 48px Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Empty List', canvas.width / 2, canvas.height / 2);
-    return canvasToBlob(canvas);
-  }
-
-  // Large central poster
-  const centerPosterWidth = 300;
-  const centerPosterHeight = 450;
-  const centerX = (canvas.width - centerPosterWidth) / 2;
-  const centerY = (canvas.height - centerPosterHeight) / 2 + 40;
-
-  await drawPoster(ctx, list.items[0], centerX, centerY, centerPosterWidth, centerPosterHeight);
-
-  // Surrounding smaller posters (8 items in circle)
-  const smallPosterWidth = 140;
-  const smallPosterHeight = 210;
-  const radius = 400;
-  const angleStep = (Math.PI * 2) / Math.min(8, list.items.length - 1);
-
-  for (let i = 1; i < Math.min(9, list.items.length); i++) {
-    const angle = angleStep * (i - 1) - Math.PI / 2;
-    const x = canvas.width / 2 + Math.cos(angle) * radius - smallPosterWidth / 2;
-    const y = canvas.height / 2 + Math.sin(angle) * radius - smallPosterHeight / 2;
-
-    // Semi-transparent background for depth
-    ctx.globalAlpha = 0.7;
-    await drawPoster(ctx, list.items[i], x, y, smallPosterWidth, smallPosterHeight);
-    ctx.globalAlpha = 1.0;
-  }
-
-  // Top banner with list info
-  ctx.fillStyle = 'rgba(15, 20, 25, 0.9)';
-  ctx.fillRect(0, 0, canvas.width, 100);
-
-  ctx.fillStyle = '#e50914';
-  ctx.font = 'bold 28px Arial, sans-serif';
+  ctx.strokeStyle = theme.border;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(60, canvas.height - 88);
+  ctx.lineTo(canvas.width - 60, canvas.height - 88);
+  ctx.stroke();
+  ctx.fillStyle = theme.muted;
+  ctx.font = `400 18px ${theme.body}`;
   ctx.textAlign = 'left';
-  ctx.fillText('CINEVRA', 50, 40);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 36px Arial, sans-serif';
-  ctx.textAlign = 'center';
-  const listName = truncateText(list.name, 35);
-  ctx.fillText(listName, canvas.width / 2, 70);
-
-  // Bottom bar with item count
-  ctx.fillStyle = 'rgba(15, 20, 25, 0.9)';
-  ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
-
-  ctx.fillStyle = '#a0a0a0';
-  ctx.font = '24px Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(`${list.items.length} amazing titles`, canvas.width / 2, canvas.height - 35);
-
+  ctx.fillText('Movies & TV, collected on Cinevra', 60, canvas.height - 46);
+  const remaining = list.items.length - items.length;
+  if (remaining > 0) {
+    ctx.textAlign = 'right';
+    ctx.fillStyle = theme.gold;
+    ctx.fillText(`+${remaining} more in this list`, canvas.width - 60, canvas.height - 46);
+  }
   return canvasToBlob(canvas);
 }
 
-/**
- * Draw poster image on canvas dengan fallback untuk missing posters
- */
-async function drawPoster(ctx, item, x, y, width, height) {
-  const posterUrl = getImageUrl(item.posterPath, 'poster');
+// Batasi jumlah baris sekaligus potong kata panjang supaya teks tidak menabrak poster.
+function drawImageText(ctx, value, x, y, maxWidth, lineHeight, maxLines) {
+  const characters = Array.from(String(value || '').replace(/\s+/g, ' ').trim());
+  const lines = [];
+  let line = '';
+  for (const character of characters) {
+    if (line && ctx.measureText(line + character).width > maxWidth) {
+      lines.push(line.trim());
+      line = '';
+      if (lines.length === maxLines) break;
+    }
+    line += character;
+  }
+  if (lines.length < maxLines && line) lines.push(line.trim());
+  if (lines.length === maxLines && lines.join('').length < characters.join('').replace(/ /g, '').length) {
+    let last = lines[maxLines - 1];
+    while (last && ctx.measureText(last + '?').width > maxWidth) last = Array.from(last).slice(0, -1).join('');
+    lines[maxLines - 1] = last.trimEnd() + '?';
+  }
+  lines.forEach((text, index) => ctx.fillText(text, x, y + index * lineHeight));
+  return lines.length;
+}
 
-  if (!posterUrl) {
-    // Fallback: colored rectangle dengan initial
-    ctx.fillStyle = '#2a2f3a';
-    ctx.fillRect(x, y, width, height);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${Math.floor(height / 4)}px Arial, sans-serif`;
+async function drawPoster(ctx, item, x, y, width, height, theme) {
+  const url = getImageUrl(item.posterPath, 'poster');
+  let image = null;
+  if (url) {
+    try { image = await loadImage(url); } catch { /* Poster gagal tetap punya judul pengganti. */ }
+  }
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, 8);
+  ctx.clip();
+  ctx.fillStyle = theme.surface;
+  ctx.fillRect(x, y, width, height);
+  if (image) {
+    const scale = Math.max(width / image.width, height / image.height);
+    ctx.drawImage(image, x + (width - image.width * scale) / 2, y + (height - image.height * scale) / 2, image.width * scale, image.height * scale);
+  } else {
+    ctx.fillStyle = theme.gold;
+    ctx.font = `600 ${Math.round(width / 3)}px ${theme.display}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(item.title.charAt(0).toUpperCase(), x + width / 2, y + height / 2);
-    return;
+    ctx.fillText(Array.from(item.title || '?')[0].toUpperCase(), x + width / 2, y + height * 0.42);
+    ctx.font = `400 ${Math.max(12, Math.round(width / 12))}px ${theme.body}`;
+    ctx.fillStyle = theme.muted;
+    ctx.textBaseline = 'alphabetic';
+    drawImageText(ctx, item.title, x + width / 2, y + height * 0.7, width - 24, width / 9, 2);
   }
-
-  try {
-    const img = await loadImage(posterUrl);
-
-    // Draw dengan aspect ratio preserved
-    const aspectRatio = img.width / img.height;
-    const targetAspectRatio = width / height;
-
-    let drawWidth, drawHeight, drawX, drawY;
-
-    if (aspectRatio > targetAspectRatio) {
-      // Image lebih lebar, crop sides
-      drawHeight = height;
-      drawWidth = height * aspectRatio;
-      drawX = x - (drawWidth - width) / 2;
-      drawY = y;
-    } else {
-      // Image lebih tinggi, crop top/bottom
-      drawWidth = width;
-      drawHeight = width / aspectRatio;
-      drawX = x;
-      drawY = y - (drawHeight - height) / 2;
-    }
-
-    // Clip to bounds
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x, y, width, height);
-    ctx.clip();
-    ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-    ctx.restore();
-
-    // Border
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x, y, width, height);
-  } catch (error) {
-    console.error('Failed to load poster:', error);
-    // Fallback sama seperti no poster
-    ctx.fillStyle = '#2a2f3a';
-    ctx.fillRect(x, y, width, height);
-  }
+  ctx.restore();
 }
 
-/**
- * Load image dengan Promise untuk async/await
- */
 function loadImage(url) {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous'; // CORS support
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = url;
+    const image = new Image();
+    const timer = setTimeout(() => { image.src = ''; reject(new Error('Poster took too long to load')); }, 8000);
+    image.crossOrigin = 'anonymous';
+    image.onload = () => { clearTimeout(timer); resolve(image); };
+    image.onerror = () => { clearTimeout(timer); reject(new Error('Poster unavailable')); };
+    image.src = url;
   });
 }
 
-/**
- * Convert canvas ke Blob untuk download/share
- */
 function canvasToBlob(canvas) {
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Could not create image')), 'image/png');
   });
 }
 
-/**
- * Wrap text ke beberapa baris dengan max width
- * @returns {number} - jumlah baris yang dirender
- */
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(' ');
-  let line = '';
-  let lineCount = 0;
-
-  for (let i = 0; i < words.length; i++) {
-    const testLine = line + words[i] + ' ';
-    const metrics = ctx.measureText(testLine);
-
-    if (metrics.width > maxWidth && i > 0) {
-      ctx.fillText(line, x, y + lineCount * lineHeight);
-      line = words[i] + ' ';
-      lineCount++;
-    } else {
-      line = testLine;
-    }
-  }
-  ctx.fillText(line, x, y + lineCount * lineHeight);
-  lineCount++;
-
-  return lineCount;
-}
-
-/**
- * Truncate text dengan ellipsis
- */
-function truncateText(text, maxLength) {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength - 3) + '...';
-}
-
-/**
- * Download image blob sebagai file
- */
 function downloadImage(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -462,109 +187,139 @@ function downloadImage(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
-/**
- * Open image export dialog dengan preview dan template selection
- */
+// Preview selalu sesuai template yang terpilih, termasuk saat gambar masih dimuat.
 async function openImageExportDialog(listId) {
-  let list;
-  if (listId === 'watchlist') {
-    list = {
-      id: 'watchlist',
-      name: 'My Watchlist',
-      items: getWatchlist(),
-    };
-  } else {
-    list = getCustomList(listId);
-  }
-
-  if (!list || list.items.length === 0) {
-    showToast('Daftar kosong, tidak bisa diexport sebagai gambar');
+  if (document.querySelector('.dialog--image-export')) return;
+  const list = listId === 'watchlist'
+    ? { id: 'watchlist', name: 'My Watchlist', items: getWatchlist() }
+    : getCustomList(listId);
+  if (!list || !list.items.length) {
+    showToast('Add a title before creating an image.');
     return;
   }
-
   const dialog = createDialog('dialog--image-export');
   const body = document.createElement('div');
   body.className = 'dialog__body';
+  const header = buildDialogHeader('Create a list image', 'Find the right frame for your collection.');
+  header.querySelector('.dialog__title').id = 'imageExportTitle';
+  dialog.setAttribute('aria-labelledby', 'imageExportTitle');
+  body.append(header);
 
-  // Header
-  body.appendChild(buildDialogHeader('Export as Image', `${list.name} (${list.items.length} items)`));
+  const workspace = document.createElement('div');
+  workspace.className = 'image-export-workspace';
+  const controls = document.createElement('div');
+  controls.className = 'image-export-controls';
+  controls.appendChild(buildShareListSummary(list));
+  const templateLabel = document.createElement('h3');
+  templateLabel.className = 'share-section__title';
+  templateLabel.id = 'templateLabel';
+  templateLabel.textContent = 'Choose a layout';
+  controls.appendChild(templateLabel);
+  const templates = document.createElement('div');
+  templates.className = 'image-export-templates';
+  templates.setAttribute('role', 'group');
+  templates.setAttribute('aria-labelledby', 'templateLabel');
+  controls.appendChild(templates);
 
-  // Template selection
-  const templateSection = document.createElement('div');
-  templateSection.className = 'image-export-templates';
+  const stage = document.createElement('figure');
+  stage.className = 'image-export-preview';
+  const preview = document.createElement('img');
+  preview.alt = `Image preview for ${list.name}`;
+  preview.hidden = true;
+  const caption = document.createElement('figcaption');
+  caption.className = 'image-export-preview__caption';
+  stage.append(preview, caption);
+  workspace.append(controls, stage);
+  body.append(workspace);
 
-  const templates = [
-    { id: 'minimal', name: 'Minimal', desc: 'Twitter card (1200x630)', icon: '🎴' },
-    { id: 'detailed', name: 'Detailed', desc: 'Instagram portrait (1080x1350)', icon: '📋' },
-    { id: 'grid', name: 'Grid', desc: 'Instagram square (1080x1080)', icon: '▦' },
-    { id: 'collage', name: 'Collage', desc: 'Large collage (1200x1200)', icon: '🎨' },
-  ];
-
-  let selectedTemplate = 'minimal';
-
-  templates.forEach((template) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = `template-btn${template.id === selectedTemplate ? ' is-active' : ''}`;
-    btn.innerHTML = `
-      <span class="template-btn__icon">${template.icon}</span>
-      <span class="template-btn__name">${template.name}</span>
-      <span class="template-btn__desc">${template.desc}</span>
-    `;
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.template-btn').forEach((b) => b.classList.remove('is-active'));
-      btn.classList.add('is-active');
-      selectedTemplate = template.id;
-    });
-    templateSection.appendChild(btn);
-  });
-
-  body.appendChild(templateSection);
-
-  // Progress indicator
-  const progressEl = document.createElement('p');
-  progressEl.className = 'dialog__hint';
-  progressEl.style.display = 'none';
-  progressEl.textContent = 'Generating image...';
-  body.appendChild(progressEl);
-
-  // Footer
+  const status = document.createElement('p');
+  status.className = 'dialog__hint image-export-status';
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-live', 'polite');
+  body.appendChild(status);
   const footer = document.createElement('div');
   footer.className = 'dialog__footer';
-
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'btn btn--ghost';
-  cancelBtn.textContent = 'Cancel';
-  cancelBtn.addEventListener('click', () => dialog.close());
-
-  const exportBtn = document.createElement('button');
-  exportBtn.className = 'btn btn--primary';
-  exportBtn.textContent = 'Generate & Download';
-  exportBtn.addEventListener('click', async () => {
-    try {
-      exportBtn.disabled = true;
-      exportBtn.textContent = 'Generating...';
-      progressEl.style.display = 'block';
-
-      const blob = await generateListImage(list, selectedTemplate);
-      const filename = `cinevra-${list.name.toLowerCase().replace(/\s+/g, '-')}-${selectedTemplate}.png`;
-      downloadImage(blob, filename);
-
-      showToast('Gambar berhasil didownload!');
-      dialog.close();
-    } catch (error) {
-      console.error('Failed to generate image:', error);
-      showToast('Gagal membuat gambar. Silakan coba lagi.');
-      exportBtn.disabled = false;
-      exportBtn.textContent = 'Generate & Download';
-      progressEl.style.display = 'none';
-    }
-  });
-
-  footer.appendChild(cancelBtn);
-  footer.appendChild(exportBtn);
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.className = 'btn btn--ghost';
+  back.textContent = 'Back to sharing';
+  back.addEventListener('click', () => { dialog.close(); openShareModal(list.id); });
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'btn btn--outline';
+  retry.textContent = 'Try again';
+  retry.hidden = true;
+  const download = document.createElement('button');
+  download.type = 'button';
+  download.className = 'btn btn--primary';
+  download.textContent = 'Download PNG';
+  download.disabled = true;
+  footer.append(back, retry, download);
   body.appendChild(footer);
 
+  let selected = 'minimal';
+  let blob = null;
+  let previewUrl = '';
+  let revision = 0;
+  const cache = new Map();
+  async function updatePreview() {
+    const current = ++revision;
+    const template = LIST_IMAGE_TEMPLATES.find(option => option.id === selected);
+    blob = null;
+    download.disabled = true;
+    retry.hidden = true;
+    preview.hidden = true;
+    stage.setAttribute('aria-busy', 'true');
+    status.textContent = 'Creating your preview?';
+    caption.textContent = `${template.width} ? ${template.height} ? PNG`;
+    templates.querySelectorAll('button').forEach(button => {
+      const active = button.dataset.template === selected;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    try {
+      if (!cache.has(selected)) cache.set(selected, generateListImage(list, selected));
+      const result = await cache.get(selected);
+      if (current !== revision || !dialog.open) return;
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(result);
+      preview.src = previewUrl;
+      preview.hidden = false;
+      blob = result;
+      download.disabled = false;
+      const shown = Math.min(template.limit, list.items.length);
+      status.textContent = `Preview ready. ${shown} of ${list.items.length} ${list.items.length === 1 ? 'title' : 'titles'} shown.`;
+    } catch {
+      cache.delete(template.id);
+      if (current !== revision || !dialog.open) return;
+      status.textContent = 'Could not create the image. Try again or choose another layout.';
+      retry.hidden = false;
+    } finally {
+      if (current === revision) stage.setAttribute('aria-busy', 'false');
+    }
+  }
+  LIST_IMAGE_TEMPLATES.forEach(template => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'template-btn';
+    button.dataset.template = template.id;
+    button.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">${template.icon}</svg><span class="template-btn__name">${template.name}</span><span class="template-btn__desc">${template.desc}</span>`;
+    button.addEventListener('click', () => { selected = template.id; updatePreview(); });
+    templates.appendChild(button);
+  });
+  retry.addEventListener('click', updatePreview);
+  download.addEventListener('click', () => {
+    if (!blob) return;
+    const name = list.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'list';
+    downloadImage(blob, `cinevra-${name}-${selected}.png`);
+    showToast('Image downloaded. Ready to share!');
+  });
+  dialog.addEventListener('close', () => {
+    revision++;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    cache.clear();
+  });
   dialog.appendChild(body);
   dialog.showModal();
+  updatePreview();
 }
